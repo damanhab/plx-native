@@ -502,7 +502,11 @@ fn the_under_posters_page_walks_title_details_reset_and_back_with_keys() {
     w.press(Key::Ok);
     assert!(!w.answer()[0].sort_value, "the default is On, so OK asks for Off");
     w.press(Key::Down);
-    assert_eq!(w.elem(), Some(30), "Down from Sort value reaches Reset");
+    assert_eq!(w.elem(), Some(4), "Down from Sort value reaches Plex online posters");
+    w.press(Key::Ok);
+    assert!(w.answer()[0].online_art, "the default is Off, so OK asks for On");
+    w.press(Key::Down);
+    assert_eq!(w.elem(), Some(30), "Down from Plex online posters reaches Reset");
     w.press(Key::Ok);
     assert_eq!(w.answer(), [UnderPosters::DEFAULT], "Reset asks for the default of both");
     assert_eq!(plx_media::route::under_posters(), UnderPosters::DEFAULT);
