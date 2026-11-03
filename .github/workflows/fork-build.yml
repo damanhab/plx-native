@@ -58,9 +58,12 @@ jobs:
         env:
           WEBOS_SDK: ${{ steps.ndk.outputs.sdk-dir }}
           FLAVOR: debug
+        # No on-screen FPS counter (`devtools` off); keep the /tmp test hooks and the thread checker.
+        # Same target dir as the cache: a fresh checkout has no pkg/ for make to think up to date.
         run: |
-          make -j"$(nproc)"
-          make ipk
+          FEAT=(RUST_FEATFLAGS="--no-default-features --features devtriggers,threadcheck" RUST_TDIR=target)
+          make -j"$(nproc)" "${FEAT[@]}"
+          make ipk "${FEAT[@]}"
           ls -la pkg/*.ipk
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
