@@ -590,7 +590,7 @@ fn native_a_thirty_thousand_event_sidecar_renders_around_the_playhead_and_after_
 
 /// A renderer holding `fonts` and the script `text`, opened the way `Engine::open` opens one.
 fn native_with(fonts: &[Font], text: &str) -> Native {
-    Native::open_data(fonts, text.as_bytes(), 1)
+    Native::open_data(fonts, None, text.as_bytes(), 1)
         .expect("native fixture requires the built host library in pkg")
 }
 
@@ -1208,7 +1208,7 @@ fn track(header: &str, events: &[(i64, i64, &str)]) -> Arc<Source> {
 }
 
 fn style(size: SubtitleSize, position: SubtitlePosition) -> TextStyle {
-    TextStyle { size, position }
+    TextStyle { size, position, ..TextStyle::default() }
 }
 
 /// Render a Text-origin source into the full logical screen, as the screen asks for it.

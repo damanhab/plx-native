@@ -695,6 +695,18 @@
     "value": "High",
     "description": "Subtitle position picker option: the caption sits near the top of the safe area."
   },
+  "settings.playback.subtitle_font": {
+    "value": "Subtitle font",
+    "description": "Settings row title and picker title: the typeface plain-text (SRT, WebVTT and similar) subtitles are drawn in. The choices other than the app's own are fonts already installed on the TV, shown by their own names."
+  },
+  "settings.playback.subtitle_font.app": {
+    "value": "App font",
+    "description": "Subtitle font picker option and read-out: the app's own subtitle typeface (Inter), the default. Every other option is a font name and is not translated."
+  },
+  "settings.playback.subtitle_font.copy": {
+    "value": "The typeface of plain subtitles. The other fonts are the TV's own. Styled subtitles keep their own fonts.",
+    "description": "Explanation under the title of the Subtitle font picker. Styled (ASS/SSA) subtitles carry their own fonts and picture subtitles (PGS, VobSub) are images, so the setting does not reach them."
+  },
   "settings.playback.hdr_overlay": {
     "value": "HDR overlay brightness",
     "description": "Settings row title and picker title: how bright the player's controls and subtitles are drawn while the picture is HDR or Dolby Vision."

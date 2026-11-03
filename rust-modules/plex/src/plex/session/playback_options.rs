@@ -77,6 +77,60 @@ impl DolbyVisionMode {
     }
 }
 
+/// The face plain-text subtitles are drawn in — one per profile, like [`DolbyVisionMode`]. `App`
+/// is the app's own Inter Bold (with its per-script Noto faces), what every build before this
+/// preference drew. Every other choice is a face the television already carries under
+/// `/usr/share/fonts`: the renderer reads it from there when it is created and nothing is
+/// bundled (`media::player::text_style::SubtitleFace`). Authored ASS/SSA keeps its own fonts.
+/// Absence and an unknown spelling are `App`.
+#[derive(Serialize, Deserialize, Default, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SubtitleFont {
+    #[default]
+    #[serde(rename = "app")]
+    App,
+    #[serde(rename = "lg_display")]
+    LgDisplay,
+    #[serde(rename = "arial")]
+    Arial,
+    #[serde(rename = "helvetica")]
+    Helvetica,
+    #[serde(rename = "times")]
+    Times,
+    #[serde(rename = "droid_sans")]
+    DroidSans,
+    #[serde(rename = "museo_sans")]
+    MuseoSans,
+    #[serde(rename = "tinos")]
+    Tinos,
+}
+
+impl SubtitleFont {
+    pub const DEFAULT: Self = Self::App;
+    /// Every option, the order the picker lists them in.
+    pub const LADDER: [SubtitleFont; 8] = [
+        SubtitleFont::App,
+        SubtitleFont::LgDisplay,
+        SubtitleFont::Arial,
+        SubtitleFont::Helvetica,
+        SubtitleFont::Times,
+        SubtitleFont::DroidSans,
+        SubtitleFont::MuseoSans,
+        SubtitleFont::Tinos,
+    ];
+
+    pub fn from_index(i: u8) -> SubtitleFont {
+        Self::LADDER.get(i as usize).copied().unwrap_or_default()
+    }
+
+    pub fn index(self) -> u8 {
+        Self::LADDER.iter().position(|&f| f == self).unwrap_or(0) as u8
+    }
+
+    pub fn is_default(&self) -> bool {
+        *self == Self::default()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -119,6 +173,24 @@ mod tests {
         }
         let encoded = serde_json::to_string(&records[0].prefs).unwrap();
         assert_eq!(serde_json::from_str::<ProfilePrefs>(&encoded).unwrap(), records[0].prefs);
+    }
+
+    #[test]
+    fn subtitle_font_is_defaulted_and_scoped_per_profile() {
+        use crate::plex::session::SubtitleFontPref;
+        for json in ["{}", r#"{"subtitle_font":"future"}"#, r#"{"subtitle_font":null}"#] {
+            let prefs: Preferences = serde_json::from_str(json).unwrap();
+            assert_eq!(prefs.subtitle_font, SubtitleFont::App);
+            assert!(serde_json::to_value(&prefs).unwrap().get("subtitle_font").is_none());
+        }
+        let prefs = Preferences::default();
+        let mut records = Vec::new();
+        assert!(put_own::<SubtitleFontPref>(&mut records, "alice", "account", SubtitleFont::LgDisplay));
+        assert_eq!(effective::<SubtitleFontPref>(&prefs, own_prefs(&records, "alice", "account")), SubtitleFont::LgDisplay);
+        assert_eq!(effective::<SubtitleFontPref>(&prefs, own_prefs(&records, "bob", "account")), SubtitleFont::App);
+        for font in SubtitleFont::LADDER {
+            assert_eq!(SubtitleFont::from_index(font.index()), font);
+        }
     }
 
     #[test]

@@ -56,7 +56,7 @@ fn text_native(style: &TextStyle, cues: &[Cue]) -> Native {
 }
 
 fn style(size: SubtitleSize, position: SubtitlePosition) -> TextStyle {
-    TextStyle { size, position }
+    TextStyle { size, position, ..TextStyle::default() }
 }
 
 /// The frame of `cues` at 1 s.

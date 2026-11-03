@@ -381,7 +381,7 @@ mod tests {
     }
 
     fn style(size: SubtitleSize, position: SubtitlePosition) -> TextStyle {
-        TextStyle { size, position }
+        TextStyle { size, position, ..TextStyle::default() }
     }
 
     /// A one-line region whose bottom edge sits on the style's bottom anchor, `extra` px below

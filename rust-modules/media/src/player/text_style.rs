@@ -7,7 +7,7 @@
 //! mirror the maths `player_hud::caption_geometry_for`/`caption_layout` use, kept with hard-coded
 //! constants so a tie test in appkit can pin that the two cannot drift apart.
 
-use plx_plex::plex::session::{SubtitlePosition, SubtitleSize};
+use plx_plex::plex::session::{SubtitleFont, SubtitlePosition, SubtitleSize};
 
 /// The logical canvas a text-origin subtitle frame is rendered into (`PlayResX/Y` of the header).
 /// `plx_base::surface::LOGICAL_*` is the one definition of the canvas; they are whole numbers.
@@ -214,23 +214,51 @@ pub fn line_spacing(scale: f32) -> f64 {
     CAPTION_LINE_PITCH as f64 * scale as f64 - font_size(scale)
 }
 
-/// The two viewer picks the synthesized header is a function of.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// Where the television keeps the faces [`SubtitleFont`] offers. They are LG's own files: read
+/// from the set when a renderer is created, never copied into the package.
+const TV_FONTS: &str = "/usr/share/fonts";
+
+/// The face a [`SubtitleFont`] other than `App` names: the family the synthesized style asks for
+/// and the file under [`TV_FONTS`] that answers to it. A family is its file's name record (nameID 1).
+pub fn tv_face(font: SubtitleFont) -> Option<(&'static str, &'static str)> {
+    Some(match font {
+        SubtitleFont::App => return None,
+        SubtitleFont::LgDisplay => ("LG Display-Regular", "LG_Display-Regular.ttf"),
+        SubtitleFont::Arial => ("HYAri-0517", "font4_arial.ttf"),
+        SubtitleFont::Helvetica => ("HYHelMo0520", "font3_helvetica.ttf"),
+        SubtitleFont::Times => ("HYTim0605", "font2_timesnewroman.ttf"),
+        SubtitleFont::DroidSans => ("Droid Sans", "DroidSans.ttf"),
+        SubtitleFont::MuseoSans => ("Museo Sans", "MuseoSans-Medium.ttf"),
+        SubtitleFont::Tinos => ("Tinos", "Tinos-Regular.ttf"),
+    })
+}
+
+/// The full path of [`tv_face`]'s file.
+pub fn tv_face_path(font: SubtitleFont) -> Option<std::path::PathBuf> {
+    tv_face(font).map(|(_, file)| std::path::Path::new(TV_FONTS).join(file))
+}
+
+/// The viewer picks the synthesized header is a function of.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct TextStyle {
     pub size: SubtitleSize,
     pub position: SubtitlePosition,
-}
-
-impl Default for TextStyle {
-    fn default() -> Self {
-        Self { size: SubtitleSize::Medium, position: SubtitlePosition::Low }
-    }
+    pub font: SubtitleFont,
 }
 
 impl TextStyle {
     /// The picks as the preferences hold them now.
     pub fn current() -> Self {
-        Self { size: crate::route::subtitle_size(), position: crate::route::subtitle_position() }
+        Self {
+            size: crate::route::subtitle_size(),
+            position: crate::route::subtitle_position(),
+            font: crate::route::subtitle_font(),
+        }
+    }
+
+    /// The family the synthesized styles name: the app's alias for Inter Bold, or a TV face.
+    pub fn family(&self) -> &'static str {
+        tv_face(self.font).map_or(super::text_ass::STYLE_FONT, |(family, _)| family)
     }
 
     pub fn scale(&self) -> f32 {
@@ -240,7 +268,9 @@ impl TextStyle {
     /// A number that differs for every distinct pair of picks, so a stored copy is stale exactly
     /// when the header it was built for no longer matches.
     pub fn generation(&self) -> u32 {
-        self.size.index() as u32 * SubtitlePosition::LADDER.len() as u32 + self.position.index() as u32
+        let picks = self.size.index() as u32 * SubtitlePosition::LADDER.len() as u32 + self.position.index() as u32;
+        let per_font = (SubtitleSize::LADDER.len() * SubtitlePosition::LADDER.len()) as u32;
+        self.font.index() as u32 * per_font + picks
     }
 }
 
@@ -495,10 +525,24 @@ mod tests {
         let mut seen = std::collections::BTreeSet::new();
         for size in SubtitleSize::LADDER {
             for position in SubtitlePosition::LADDER {
-                assert!(seen.insert(TextStyle { size, position }.generation()), "{size:?} {position:?}");
+                for font in SubtitleFont::LADDER {
+                    assert!(seen.insert(TextStyle { size, position, font }.generation()), "{size:?} {position:?} {font:?}");
+                }
             }
         }
-        assert_eq!(seen.len(), 15);
-        assert_eq!(TextStyle::default().generation(), TextStyle { size: SubtitleSize::Medium, position: SubtitlePosition::Low }.generation());
+        assert_eq!(seen.len(), 15 * SubtitleFont::LADDER.len());
+        assert_eq!(TextStyle::default().generation(), TextStyle { size: SubtitleSize::Medium, position: SubtitlePosition::Low, font: SubtitleFont::App }.generation());
+    }
+
+    #[test]
+    fn the_app_font_keeps_the_inter_alias_and_a_tv_font_names_its_own_family() {
+        assert_eq!(TextStyle::default().family(), super::super::text_ass::STYLE_FONT);
+        assert_eq!(tv_face_path(SubtitleFont::App), None);
+        let lg = TextStyle { font: SubtitleFont::LgDisplay, ..TextStyle::default() };
+        assert_eq!(lg.family(), "LG Display-Regular");
+        assert_eq!(tv_face_path(SubtitleFont::LgDisplay).unwrap(), std::path::Path::new("/usr/share/fonts/LG_Display-Regular.ttf"));
+        for font in SubtitleFont::LADDER.into_iter().skip(1) {
+            assert!(tv_face(font).is_some(), "{font:?} names a face");
+        }
     }
 }

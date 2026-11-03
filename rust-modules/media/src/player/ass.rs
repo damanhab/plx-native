@@ -514,7 +514,18 @@ fn restyles(old: &Source, new: &Source) -> bool {
         && new.origin.is_text()
         && std::mem::discriminant(&old.content) == std::mem::discriminant(&new.content)
         && source_fonts(old) == source_fonts(new)
+        && tv_face_of(old) == tv_face_of(new)
         && track_text(old) != track_text(new)
+}
+
+/// The television face a Text-origin source's style names (`text_style::tv_face`), which the
+/// renderer must hold before its track loads: a renderer takes no face after that, so a change of
+/// face is a new renderer, never a restyle.
+fn tv_face_of(source: &Source) -> Option<std::path::PathBuf> {
+    match source.origin {
+        Origin::Text(style) => super::text_style::tv_face_path(style.font),
+        Origin::Authored => None,
+    }
 }
 
 /// A sidecar script's timings, kept whether or not it is windowed: what a rendered frame is valid
@@ -554,7 +565,7 @@ impl Engine {
             if let Some(index) = super::ass_script::ScriptIndex::parse(bytes) {
                 if index.windowed() {
                     let window = index.window(now_ms);
-                    windowed = Some(Native::open_data(fonts, &window.text, 1)?);
+                    windowed = Some(Native::open_data(fonts, tv_face_of(source).as_deref(), &window.text, 1)?);
                     self.script = Some(Scripted { index, window: Some((window.lo_ms, window.hi_ms)) });
                 } else {
                     self.script = Some(Scripted { index, window: None });
@@ -645,7 +656,7 @@ impl Engine {
         match self.native.as_mut() {
             Some(native) => native.replace_track(&window.text, 1),
             None => {
-                self.native = Some(Native::open_data(fonts, &window.text, 1)?);
+                self.native = Some(Native::open_data(fonts, tv_face_of(source).as_deref(), &window.text, 1)?);
                 Ok(())
             }
         }
@@ -916,17 +927,18 @@ impl Native {
     fn open(source: &Source) -> Result<Self, Fault> {
         match &source.content {
             Content::Embedded { header, .. } => {
-                let mut native = Self::open_data(source_fonts(source), header, 0)?;
+                let mut native = Self::open_data(source_fonts(source), tv_face_of(source).as_deref(), header, 0)?;
                 native.append(source, 0)?;
                 Ok(native)
             }
-            Content::Script { bytes, .. } => Self::open_data(source_fonts(source), bytes, 1),
+            Content::Script { bytes, .. } => Self::open_data(source_fonts(source), tv_face_of(source).as_deref(), bytes, 1),
         }
     }
 
-    /// A renderer holding `fonts` and the track `data` reads as: a script (`script` 1) or a codec
-    /// private header (0).
-    fn open_data(fonts: &[Font], data: &[u8], script: i32) -> Result<Self, Fault> {
+    /// A renderer holding `fonts` (and the television's `tv_face`, the viewer's subtitle font when it
+    /// is not the app's) and the track `data` reads as: a script (`script` 1) or a codec private
+    /// header (0).
+    fn open_data(fonts: &[Font], tv_face: Option<&std::path::Path>, data: &[u8], script: i32) -> Result<Self, Fault> {
         #[cfg(test)]
         OPEN_DATA_CALLS.with(|c| c.set(c.get() + 1));
         static LOADED: OnceLock<bool> = OnceLock::new();
@@ -957,6 +969,21 @@ impl Native {
             }
             let name = path.file_name().and_then(|n| n.to_str()).ok_or(Fault::FontsUnavailable)?;
             native.font(name, &bytes)?;
+        }
+        // The viewer's subtitle font, read from the television's own font directory (never
+        // bundled). After Inter and Noto, so a glyph it lacks still falls to them (the default
+        // family is "Inter", which the Noto faces answer to too). A missing or oversized file is
+        // skipped and logged: the style then falls back to that default family.
+        if let Some(path) = tv_face {
+            match std::fs::read(path) {
+                Ok(bytes) if bytes.len() <= MAX_FONT_BYTES => {
+                    let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("tvfont.ttf");
+                    if native.font(name, &bytes).is_err() {
+                        plx_base::eventlog::log(&format!("ass: subtitle font {name} refused; default face"));
+                    }
+                }
+                _ => plx_base::eventlog::log(&format!("ass: subtitle font {} unreadable; default face", path.display())),
+            }
         }
         // A font the renderer cannot take (unnamed, over the budget, rejected by the native
         // side) is skipped: the text still shows, in the default face.

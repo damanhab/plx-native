@@ -36,7 +36,7 @@
 //! assignment. `subtitle_offsets` is the other tenant of the door and is declared the same way
 //! ([`SubtitleOffsetsPref`]).
 use super::{
-    DolbyVisionMode, InstantDpadSeeking, DeckPress, DirectPlayMode, HdrOverlayBrightness, LastLibrary, LibraryViews, NativeAudioRefusal, NextEpisodeMode, OpaqueExtensions,
+    DolbyVisionMode, InstantDpadSeeking, SubtitleFont, DeckPress, DirectPlayMode, HdrOverlayBrightness, LastLibrary, LibraryViews, NativeAudioRefusal, NextEpisodeMode, OpaqueExtensions,
     PlaintextConsent, HoldHintTaught, PlaybackQuality, ServerKeyPin, Session, SkipInterval, SubtitleOffsetEntry, SubtitleOffsets, SubtitlePosition,
     SubtitleSize, SubtitleTone, UiResolution, UnderPosters,
 };
@@ -128,6 +128,9 @@ pub struct Preferences {
     /// Dolby Vision override (`Auto` or `Off`); `Auto` by default.
     #[serde(default, deserialize_with = "de_soft_dolby_vision_mode", skip_serializing_if = "DolbyVisionMode::is_default")]
     pub dolby_vision_mode: DolbyVisionMode,
+    /// The face plain-text subtitles are drawn in ([`SubtitleFont`]); the app's own by default.
+    #[serde(default, deserialize_with = "de_soft_subtitle_font", skip_serializing_if = "SubtitleFont::is_default")]
+    pub subtitle_font: SubtitleFont,
     /// **What OK does on a Continue Watching card** — see [`DeckPress`]. A frozen fallback like
     /// [`Preferences::playback_quality`]: each profile keeps its own pick in `profile_prefs`, and a
     /// profile that has not picked reads this top-level key. Absence is Details, so a session written
@@ -530,6 +533,8 @@ setting!(SubtitleSizePref: SubtitleSize = subtitle_size, "subtitle_size", Profil
     account false, live true, settings Some(SettingsWrite::Optimistic), parse Soft);
 setting!(SubtitlePositionPref: SubtitlePosition = subtitle_position, "subtitle_position", Profile fallback LegacyInstallKey,
     account false, live true, settings Some(SettingsWrite::Optimistic), parse Soft);
+setting!(SubtitleFontPref: SubtitleFont = subtitle_font, "subtitle_font", Profile fallback LegacyInstallKey,
+    account false, live true, settings Some(SettingsWrite::Optimistic), parse Soft);
 setting!(HdrOverlayBrightnessPref: HdrOverlayBrightness = hdr_overlay_brightness, "hdr_overlay_brightness",
     Profile fallback LegacyInstallKey, account false, live true, settings Some(SettingsWrite::Optimistic), parse Soft);
 // Tone and enhancements have no Settings row: the player panel is their only writer.
@@ -651,6 +656,7 @@ pub const DESCRIPTORS: &[Descriptor] = &[
     Descriptor::of::<SkipIntervalPref>(),
     Descriptor::of::<InstantDpadSeekingPref>(),
     Descriptor::of::<DolbyVisionModePref>(),
+    Descriptor::of::<SubtitleFontPref>(),
     Descriptor::of::<DeckPressPref>(),
     Descriptor::of::<UnderPostersPref>(),
     Descriptor::of::<AudioEnhancementsPref>(),
@@ -1365,6 +1371,17 @@ where
         return Ok(InstantDpadSeeking::default());
     };
     Ok(serde_json::from_value::<InstantDpadSeeking>(v).unwrap_or_default())
+}
+
+/// The subtitle font is a preference too: a spelling this build does not know degrades to the app's own.
+fn de_soft_subtitle_font<'de, D>(d: D) -> Result<SubtitleFont, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let Ok(v) = serde_json::Value::deserialize(d) else {
+        return Ok(SubtitleFont::default());
+    };
+    Ok(serde_json::from_value::<SubtitleFont>(v).unwrap_or_default())
 }
 
 /// Dolby Vision mode is a preference too: a spelling this build does not know degrades to Auto.

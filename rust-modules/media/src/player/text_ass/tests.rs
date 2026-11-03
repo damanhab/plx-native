@@ -458,7 +458,7 @@ fn header_matches_the_plan() {
 
 #[test]
 fn every_style_name_a_cue_can_name_exists_in_the_header() {
-    for style in [TextStyle::default(), TextStyle { size: SubtitleSize::ExtraLarge, position: SubtitlePosition::High }] {
+    for style in [TextStyle::default(), TextStyle { size: SubtitleSize::ExtraLarge, position: SubtitlePosition::High, ..TextStyle::default() }] {
         let h = header(&style);
         for align in 1..=9 {
             let name = style_name(align);
@@ -478,7 +478,7 @@ fn every_style_name_a_cue_can_name_exists_in_the_header() {
 
 #[test]
 fn header_follows_the_viewers_size_and_position() {
-    let h = header(&TextStyle { size: SubtitleSize::ExtraLarge, position: SubtitlePosition::High });
+    let h = header(&TextStyle { size: SubtitleSize::ExtraLarge, position: SubtitlePosition::High, ..TextStyle::default() });
     let default = style_lines(&h)[0].trim_start_matches("Style: ").split(',').map(str::to_string).collect::<Vec<_>>();
     assert_eq!(default[2], "77.23", "36 * 1.5 * 1.4302");
     assert_eq!((default[19].as_str(), default[20].as_str(), default[21].as_str()), ("390", "390", "417"));
@@ -486,7 +486,7 @@ fn header_follows_the_viewers_size_and_position() {
     assert!(an8.contains(",8,390,390,100,-1"), "the top margin is independent of Position: {an8}");
     let an1 = h.lines().find(|l| l.starts_with("Style: An1,")).unwrap();
     assert!(an1.contains(",1,390,390,417,-1"), "{an1}");
-    let small = header(&TextStyle { size: SubtitleSize::Small, position: SubtitlePosition::Middle });
+    let small = header(&TextStyle { size: SubtitleSize::Small, position: SubtitlePosition::Middle, ..TextStyle::default() });
     assert!(style_lines(&small)[0].contains(",40.16,"), "{}", style_lines(&small)[0]);
     assert!(style_lines(&small)[0].contains(",2,664,664,257,-1"));
 }
@@ -709,7 +709,7 @@ fn assemble_is_header_then_events_and_follows_the_picks() {
     let medium = script.assemble(&TextStyle::default());
     assert!(medium.starts_with(&header(&TextStyle::default())));
     assert!(medium.ends_with("Hi\n"));
-    let large = script.assemble(&TextStyle { size: SubtitleSize::Large, position: SubtitlePosition::High });
+    let large = script.assemble(&TextStyle { size: SubtitleSize::Large, position: SubtitlePosition::High, ..TextStyle::default() });
     assert_ne!(medium, large);
     assert!(large.ends_with(&script.events), "restyling re-uses the converted events");
 }
