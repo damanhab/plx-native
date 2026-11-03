@@ -335,10 +335,12 @@ impl Page {
                 (None, _) if self.art_server.is_some() => t.row.thumb.clone(),
                 _ => String::new(),
             };
-            let src = t.copy.map(|c| c.server_id).or(self.art_server.filter(|_| !thumb.is_empty())).map_or(0, |s| s.raw());
+            let server = t.copy.map(|c| c.server_id).or(self.art_server.filter(|_| !thumb.is_empty()));
+            let src = server.map_or(0, |s| s.raw());
             // Under posters > Plex online posters: the title's own catalog poster, through the same
             // server, with the path above standing in when Plex has none.
-            let online = if src != 0 && t.row.hex != [0; 12] {
+            // (`server`, not `src`: the household's own server is id 0.)
+            let online = if server.is_some() && t.row.hex != [0; 12] {
                 plx_plex::plex::online_poster_path(&t.row.hex, &thumb)
             } else { String::new() };
             // One corner mark per tile: an unplayable mark replaces the watched tick.
