@@ -870,6 +870,8 @@ pub fn card_named_led(p: Painter, frame: Rect, art: Art, fan_name: Option<&str>,
                 if poster_mark(&m) == PosterMark::Watched {
                     watched_mark(p, r, rad);
                 }
+                // The quality badge sits in the opposite corner, so it never meets the tick.
+                if t != 0 { quality_badge(pa, r, &m); }
             }
         }
         Art::Thumb { key, .. } => {
@@ -1143,6 +1145,33 @@ fn veil_tex() -> std::os::raw::c_uint {
 /// is the case that decided against a bare tick alone.
 pub fn watched_mark(p: Painter, card: Rect, rad: f32) {
     corner_mark(p, card, rad, crate::icons::Icon::Check);
+}
+
+/// **The words of a poster's quality badge**: `4K`, then the dynamic range, `DV` for Dolby Vision
+/// or `HDR` for any other (`4K DV`, `4K HDR`, `HDR`, `4K`). `None` for a title that is neither 4K
+/// nor HDR: most of a server is 1080 SDR, so a bare tile is the common case and a badge means
+/// something. A listing that carried no streams says no range, and the badge then says only `4K`.
+pub fn quality_badge_text(m: &TileFacts<'_>) -> Option<String> {
+    let k4 = m.video_resolution.is_some_and(|r| r.eq_ignore_ascii_case("4k"));
+    let range = if m.dv { Some("DV") } else if m.hdr { Some("HDR") } else { None };
+    let parts: Vec<&str> = k4.then_some("4K").into_iter().chain(range).collect();
+    (!parts.is_empty()).then(|| parts.join(" "))
+}
+
+/// **A poster's quality badge**: [`quality_badge_text`] in bold white on a dark capsule in the
+/// poster's top-LEFT corner (the watched tick owns the right), on every poster, focused or not.
+pub fn quality_badge(p: Painter, card: Rect, m: &TileFacts<'_>) {
+    let Some(text) = quality_badge_text(m) else { return };
+    let Ok(c) = std::ffi::CString::new(text) else { return };
+    let size = theme::size::MICRO;
+    let w = p.text_width_tracked(c.as_ptr(), size, 1, 0.0);
+    let ins = card.w * TICK_INSET;
+    let h = (size as f32 * 1.4).round();
+    let pad = (h * 0.4).round();
+    let plate = Rect::new(card.x + ins, card.y + ins, w + 2.0 * pad, h);
+    p.rect(plate, h * 0.5, theme::TILE_BADGE_FILL, theme::TILE_BADGE_FILL, 0.0);
+    let y = plx_gfx::text::text_vcenter_y(size, 1, plate.y + plate.h * 0.5);
+    p.text(c.as_ptr(), plate.x + pad, y, size, theme::TILE_MARK_INK, 0, 1);
 }
 
 /// **A tile's one corner mark**: the veil, then `icon` bare over it in the tick's slot. The watched

@@ -915,6 +915,9 @@ pub const TRACKING_TITLE_TIGHT: f32 = plx_gfx::text::TRACKING_TITLE_TIGHT;
 /// The tick's own soft drop shadow, INSIDE the veil — belt and braces on a bright frame, and what
 /// keeps the mark from dissolving into a busy one (the design's `drop-shadow(0 2px 7px …)`).
 pub const TILE_MARK_SHADOW: [f32; 4] = with_a(BLACK, 0.60);
+/// The plate under a poster's QUALITY badge (`4K`, `HDR`, `DV`; `widgets::quality_badge`): a
+/// word needs a ground on any frame, where the corner tick's veil fades out under a bare glyph.
+pub const TILE_BADGE_FILL: [f32; 4] = with_a(BLACK, 0.62);
 /// The ink of a collection's NAME set on its baked fan (`Collections.dc.html` G1:
 /// `.art b { color: rgba(255,255,255,.94) }`), drawn live by `ui::collection_tile::draw_fan_name`.
 pub const FAN_NAME_INK: [f32; 4] = with_a(WHITE, 0.94);

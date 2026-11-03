@@ -95,6 +95,8 @@ pub struct TileFacts<'a> {
     /// `4k` / `1080` / `720` / `sd` …
     pub video_resolution: Option<&'a str>,
     pub hdr: bool,
+    /// Dolby Vision (`hdr` is then true too).
+    pub dv: bool,
     /// 0..10.
     pub audience_rating: Option<f32>,
     pub leaf_count: Option<u32>,

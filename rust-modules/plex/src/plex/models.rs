@@ -510,6 +510,8 @@ pub struct ListingFacts {
     pub video_resolution: Option<String>,
     /// A video stream of `Media[0]` is HDR ([`Stream::is_hdr`]).
     pub hdr: bool,
+    /// A video stream of `Media[0]` carries Dolby Vision (`DOVIPresent`); `hdr` is true too.
+    pub dv: bool,
     pub content_rating: Option<String>,
     /// 0..10.
     pub audience_rating: Option<f32>,
@@ -537,6 +539,11 @@ impl Metadata {
                 .flat_map(|x| x.part.iter())
                 .flat_map(|p| p.stream.iter())
                 .any(|s| s.stream_type == 1 && s.is_hdr()),
+            dv: media
+                .into_iter()
+                .flat_map(|x| x.part.iter())
+                .flat_map(|p| p.stream.iter())
+                .any(|s| s.stream_type == 1 && s.dovi_present != 0),
             content_rating: some(&self.content_rating),
             audience_rating: (self.audience_rating > 0.0).then_some(self.audience_rating as f32),
             duration_ms: (self.duration > 0).then_some(self.duration),
@@ -1289,6 +1296,10 @@ mod tests {
         assert_eq!((show.season_count, show.leaf_count, show.viewed_leaf_count), (Some(3), Some(30), Some(12)));
         let bare = listing(r#"{"type":"movie","ratingKey":"3","childCount":4}"#);
         assert_eq!(bare, super::ListingFacts::default(), "nothing sent: nothing known (a movie has no seasons)");
+        let dv = listing(r#"{"type":"movie","ratingKey":"4",
+            "Media":[{"videoResolution":"4k","Part":[{"Stream":[{"streamType":1,"colorTrc":"smpte2084","DOVIPresent":true}]}]}]}"#);
+        assert!(dv.hdr && dv.dv, "Dolby Vision is HDR and says so apart");
+        assert!(!movie.dv, "HDR10 is not Dolby Vision");
     }
 
     #[test]

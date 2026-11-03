@@ -163,6 +163,9 @@ pub struct PmsMovie {
     /// The first video stream is HDR (HDR10 / HLG / Dolby Vision).
     #[serde(default, skip_serializing_if = "is_false")]
     pub hdr: bool,
+    /// The first video stream carries Dolby Vision (`hdr` is then true too).
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub dv: bool,
     /// `audienceRating` (0..10), or `None` when the server sent none.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub audience_rating: Option<f32>,
@@ -557,6 +560,7 @@ fn fill_caption_facts(m: &mut PmsMovie, it: &plx_plex::plex::Metadata) {
     m.genre = facts.genre;
     m.video_resolution = facts.video_resolution;
     m.hdr = facts.hdr;
+    m.dv = facts.dv;
     m.audience_rating = facts.audience_rating;
     m.leaf_count = facts.leaf_count;
     m.viewed_leaf_count = facts.viewed_leaf_count;

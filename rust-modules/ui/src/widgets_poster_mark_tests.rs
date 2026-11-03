@@ -180,3 +180,19 @@ fn the_watched_tick_reads_the_veil_token_and_no_literal_alpha() {
         assert!(!body.contains(literal), "corner_mark spells an alpha ({literal}) instead of the token");
     }
 }
+
+/// The quality badge says 4K and the dynamic range, Dolby Vision as its own `DV`, and nothing for
+/// a title that is neither 4K nor HDR.
+#[test]
+fn the_quality_badge_names_4k_and_the_range_with_dolby_vision_apart() {
+    let at = |res: Option<&'static str>, hdr: bool, dv: bool| {
+        quality_badge_text(&TileFacts { video_resolution: res, hdr, dv, ..TileFacts::default() })
+    };
+    assert_eq!(at(Some("4k"), true, true).as_deref(), Some("4K DV"));
+    assert_eq!(at(Some("4k"), true, false).as_deref(), Some("4K HDR"));
+    assert_eq!(at(Some("4K"), false, false).as_deref(), Some("4K"));
+    assert_eq!(at(Some("1080"), true, false).as_deref(), Some("HDR"));
+    assert_eq!(at(Some("1080"), true, true).as_deref(), Some("DV"));
+    assert_eq!(at(Some("1080"), false, false), None);
+    assert_eq!(at(None, false, false), None);
+}

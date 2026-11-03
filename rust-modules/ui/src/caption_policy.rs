@@ -97,6 +97,8 @@ pub struct CaptionFacts {
     pub genre: Option<String>,
     pub video_resolution: Option<String>,
     pub hdr: bool,
+    /// Dolby Vision: the Video line says `DV` in place of `HDR`.
+    pub dv: bool,
     pub content_rating: Option<String>,
     /// 0..10.
     pub audience_rating: Option<f32>,
@@ -174,7 +176,7 @@ pub fn caption_lines(policy: &CaptionPolicy, facts: &CaptionFacts, locale: &Loca
         DetailsKind::Genre => facts.genre.clone().filter(|g| !g.is_empty()),
         DetailsKind::Video => join(
             facts.video_resolution.as_deref().and_then(resolution_mark).into_iter()
-                .chain(facts.hdr.then(|| "HDR".to_string())).collect(),
+                .chain(facts.hdr.then(|| if facts.dv { "DV" } else { "HDR" }.to_string())).collect(),
         ),
         DetailsKind::AgeRatingScore => join(
             facts.content_rating.clone().into_iter().filter(|r| !r.is_empty())
