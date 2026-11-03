@@ -1475,6 +1475,25 @@ pub(crate) fn draw_sort_value(
     for (mask, tint) in mark { crate::icons::draw(p, *mask, mark_rect.scaled(crate::icons::mark_zoom(*mask)), *tint); }
 }
 
+/// How far under an UNFOCUSED poster's bottom edge its resting name's box starts: the collapsed
+/// gap under a shelf is `space::LG` (40 px) to the next heading, so the 24 px box ends 10 px clear.
+pub const REST_NAME_GAP: f32 = 6.0;
+
+/// **The name under an UNFOCUSED poster of a shelf whose Under posters Title switch is On**
+/// (`cards::Shelf`: every card names itself, not only the focused one). One CAPTION 24 line in the
+/// sort value's resting ink and shadow, centred on the poster's axis and fitted to the poster's
+/// width (an ellipsis, never smaller type); the focused card keeps its full block.
+pub(crate) fn draw_rest_name(p: Painter, rect: Rect, sty: &RowStyle, name: &std::ffi::CStr, measure: &dyn plx_machine::machine::Measure) {
+    use crate::caption_policy::{CAPTION_SHADOW, CAPTION_SHADOW_DY};
+    let size = theme::size::CAPTION;
+    let Ok(text) = name.to_str() else { return };
+    if text.is_empty() { return; }
+    let run = measure.fit_line(text, sty.w, size, false);
+    let y = plx_gfx::text::text_vcenter_y(size, 0, rect.y + rect.h + REST_NAME_GAP + SORT_VALUE_H * 0.5);
+    p.text(run.as_ptr(), rect.cx(), y + CAPTION_SHADOW_DY, size, CAPTION_SHADOW, 1, 0);
+    p.text(run.as_ptr(), rect.cx(), y, size, theme::SORT_VALUE_INK, 1, 0);
+}
+
 /// **The state line under a focused Continue Watching tile** (`registry::captions::shelf_label`: the
 /// caption rung of the deck's state, replacing the details line, and always shown on the deck (the
 /// owner's 2026-10-22 call), Details Nothing included (`captions::deck_policy`); a

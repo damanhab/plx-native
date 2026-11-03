@@ -1014,6 +1014,12 @@ impl Shelf {
             }
         } else {
             card_row::draw_tile(pr, src.art(i), rect, s, &self.style, src.progress(i));
+            if self.names_at_rest() {
+                let label = src.label(i);
+                if let Some(name) = label.title.as_ref().or(label.caption.as_ref()) {
+                    card_row::draw_rest_name(pr, rect, &self.style, name, f.measure);
+                }
+            }
         }
         let tile = Tile { rect, scale: s, radius: self.style.tile_radius(rect, s), focused };
         src.compose(pr, i, &tile, f.measure, label.as_ref(), |paint, label| {
@@ -1030,7 +1036,16 @@ impl Shelf {
         // a style that hangs its block at its own drop shows it whole: no band opens for it
         let label = src.label(i);
         let label = if self.style.label_drop.is_some() { label } else { self.row.reveal(label, at.below_rise) };
-        label.settling(self.row.settle_lag(src.len(), i, &self.style))
+        let label = label.settling(self.row.settle_lag(src.len(), i, &self.style));
+        // the neighbours name themselves under their own tiles, so the focused block keeps to its own
+        if self.names_at_rest() { label.within_tile() } else { label }
+    }
+
+    /// **Every poster names itself, not only the focused one**: the shelf follows an Under posters
+    /// policy whose Title switch is On. The unfocused cards draw their name in the collapsed gap
+    /// ([`card_row::draw_rest_name`]); the focused one keeps its full block, held to its tile.
+    fn names_at_rest(&self) -> bool {
+        self.style.label_drop.is_none() && self.row.caption_policy().is_some_and(|policy| policy.title)
     }
 
     /// Test support: the default focused caption's `(card index, top y, bottom y, alpha)` with
