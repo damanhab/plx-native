@@ -1478,6 +1478,10 @@ pub(crate) fn draw_sort_value(
 /// How far under an UNFOCUSED poster's bottom edge its resting name's box starts: the collapsed
 /// gap under a shelf is `space::LG` (40 px) to the next heading, so the 24 px box ends 10 px clear.
 pub const REST_NAME_GAP: f32 = 6.0;
+/// The room a resting name takes under its poster ([`REST_NAME_GAP`] and its box): what a screen
+/// that shows names under every poster adds to its row pitch, so a name clears the next heading by
+/// the whole collapsed gap.
+pub const REST_NAME_ROOM: f32 = REST_NAME_GAP + SORT_VALUE_H;
 
 /// **The name under an UNFOCUSED poster of a shelf whose Under posters Title switch is On**
 /// (`cards::Shelf`: every card names itself, not only the focused one). One CAPTION 24 line in the

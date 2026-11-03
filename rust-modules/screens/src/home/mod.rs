@@ -1555,7 +1555,7 @@ impl HomeScreen {
         let mut flow = 0.0;
         for shelf in &mut self.grid.shelves {
             shelf.set_base_y(top + flow - self.grid.scroll_y.pos * self.snap.pos);
-            flow += ui_cards::ROW_PITCH_FIXED + shelf.under_band();
+            flow += pitch_fixed() + shelf.under_band();
         }
     }
 
@@ -3644,12 +3644,12 @@ fn band_open_of(deck: bool) -> f32 {
 /// the shelf's top. A rest that depends on the band and on the direction of the last move is not a
 /// rest a heading can be kept out of the chrome by.
 fn rest_scroll(row: usize, rows: usize, last_open: f32) -> f32 {
-    ui_cards::grid_rest_scroll(row, ui_cards::ROW_PITCH_FIXED + ui_cards::LABEL_BAND_COLLAPSED, 0.0, grid_max_scroll(rows, last_open))
+    ui_cards::grid_rest_scroll(row, pitch_fixed() + ui_cards::LABEL_BAND_COLLAPSED, 0.0, grid_max_scroll(rows, last_open))
 }
 /// The document's end, with `last_open` the band the LAST shelf opens when focused.
 fn grid_max_scroll(rows: usize, last_open: f32) -> f32 {
     let n = rows.max(1);
-    let h = ui_cards::settled_top_for(n, Some(n - 1), ui_cards::ROW_PITCH_FIXED, last_open);
+    let h = ui_cards::settled_top_for(n, Some(n - 1), pitch_fixed(), last_open);
     (h - (SCR_H - CONTENT_Y) + 60.0).max(0.0)
 }
 fn shelf_top_settled(row: usize, focus_row: usize, open: f32) -> f32 {
@@ -3659,7 +3659,13 @@ fn shelf_top_settled(row: usize, focus_row: usize, open: f32) -> f32 {
 /// holds focus, which opens no row's band.
 /// `open` is the band the focused shelf opens ([`HomeScreen::band_open_at`]).
 fn shelf_top_banded(row: usize, band_row: Option<usize>, open: f32) -> f32 {
-    ui_cards::settled_top_for(row, band_row, ui_cards::ROW_PITCH_FIXED, open)
+    ui_cards::settled_top_for(row, band_row, pitch_fixed(), open)
+}
+/// A shelf's fixed pitch here: the shared one, plus the room a name takes under every poster while
+/// the Under posters Title switch is On (`cards::Shelf` names each card then), so the names clear
+/// the next shelf's heading.
+fn pitch_fixed() -> f32 {
+    ui_cards::ROW_PITCH_FIXED + if crate::registry::captions::policy().title { ui_cards::REST_NAME_ROOM } else { 0.0 }
 }
 
 fn wash_corners(hero: Option<&PmsMovie>, grid: [[f32; 4]; 4], snap: f32) -> [[f32; 4]; 4] {
