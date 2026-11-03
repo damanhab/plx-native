@@ -285,6 +285,14 @@ impl Grid {
         self.caption_policy
     }
 
+    /// **Every poster names itself, not only the focused one**: the grid follows an Under posters
+    /// policy whose Title switch is On and shows no value lines. A card with no open block draws its
+    /// name in the gap under it (`card_row::draw_rest_name`, the shelf's); the focused card keeps its
+    /// full block, held to its own tile.
+    fn names_at_rest(&self) -> bool {
+        !self.spec.value_line && self.caption_policy.is_some_and(|policy| policy.title)
+    }
+
     /// Draw every tile's sort value line, and space the rows for it.
     pub fn set_value_line(&mut self, on: bool) { self.spec.value_line = on; }
 
@@ -1035,7 +1043,9 @@ impl Grid {
         let label = if self.spec.value_line { None } else {
             open.map(|open| {
                 let label = if focused && self.caption_held() { super::TileLabel::default() } else { src.label(i) };
-                label.revealed(self.band_h(), open, self.rise_below(cards, f.cx, src, i, bands))
+                let label = label.revealed(self.band_h(), open, self.rise_below(cards, f.cx, src, i, bands));
+                // the neighbours name themselves under their own tiles, so this block keeps to its own
+                if self.names_at_rest() { label.within_tile() } else { label }
             })
         };
         // an arriving card fades in
@@ -1078,7 +1088,17 @@ impl Grid {
     fn draw_value<H: Host, S: CardSource<H>>(
         &self, f: &DrawFrame<'_, '_, H>, src: &S, i: usize, paint: &CardPaint, s: f32, focused: bool,
     ) {
-        if !self.spec.value_line { return; }
+        if !self.spec.value_line {
+            // a card with no open block names itself under its poster, as a shelf's does
+            if self.names_at_rest() && !focused && paint.label.is_none() {
+                src.with_label(i, |label| {
+                    if let Some(name) = label.title.as_ref().or(label.caption.as_ref()) {
+                        card_row::draw_rest_name(paint.p, paint.rect, &self.spec.style, name, f.measure);
+                    }
+                });
+            }
+            return;
+        }
         src.with_label(i, |label| {
             if let Some(value) = &label.value {
                 card_row::draw_sort_value(paint.p, paint.rect, s, &self.spec.style, value, f.measure, focused);

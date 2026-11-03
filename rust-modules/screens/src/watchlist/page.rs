@@ -332,6 +332,11 @@ impl Page {
                 _ => String::new(),
             };
             let src = t.copy.map(|c| c.server_id).or(self.art_server.filter(|_| !thumb.is_empty())).map_or(0, |s| s.raw());
+            // Under posters > Plex online posters: the title's own catalog poster, through the same
+            // server, with the path above standing in when Plex has none.
+            let thumb = if src != 0 && t.row.hex != [0; 12] && crate::registry::captions::online_art() {
+                plx_plex::plex::online_poster_path(&t.row.hex, &thumb)
+            } else { thumb };
             // One corner mark per tile: an unplayable mark replaces the watched tick.
             let watched = facts.is_some_and(|f| f.watched) && !tiles::owns_corner(t.state);
             self.cells.push(Cell {
@@ -492,6 +497,10 @@ fn tile_facts<'a>(t: &'a WatchTile, c: &'a Cell) -> TileFacts<'a> {
         watched: c.watched,
         unwatched: !c.watched && c.resume.is_none(),
         blur: c.blur,
+        // the matched copy's quality, for the poster's badge
+        video_resolution: c.listing.video_resolution.as_deref(),
+        hdr: c.listing.hdr,
+        dv: c.listing.dv,
         ..Default::default()
     }
 }

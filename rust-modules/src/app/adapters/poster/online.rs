@@ -93,13 +93,27 @@ fn ask(hex: &str) -> Resolved {
     }
     let account = plx_plex::plex::account::AccountClient::new(&client_id, Some(&credential));
     let mut transport = account.watchlist_transport();
-    match account.catalog_item(hex, &mut transport) {
+    let (answer, why) = match account.catalog_item(hex, &mut transport) {
         Ok(item) => match item.item.thumb.filter(|u| u.starts_with("https://")) {
-            Some(url) => Resolved::Url(url),
-            None => Resolved::Absent,
+            Some(url) => (Resolved::Url(url), "url".to_string()),
+            None => (Resolved::Absent, "no poster".to_string()),
         },
-        Err(WatchlistError::NotFound | WatchlistError::BadRequest) => Resolved::Absent,
-        Err(_) => Resolved::Transient,
+        Err(e @ (WatchlistError::NotFound | WatchlistError::BadRequest)) => (Resolved::Absent, format!("{e:?}")),
+        Err(e) => (Resolved::Transient, format!("{e:?}")),
+    };
+    note(hex, &why);
+    answer
+}
+
+/// The first [`NOTE_CAP`] lookups' outcomes in the event log (the catalog id's head and the
+/// answer's kind; never a URL or a credential), so a tile that keeps the server's poster says why.
+fn note(hex: &str, why: &str) {
+    use std::sync::atomic::{AtomicU32, Ordering};
+    const NOTE_CAP: u32 = 60;
+    static NOTED: AtomicU32 = AtomicU32::new(0);
+    if NOTED.fetch_add(1, Ordering::Relaxed) < NOTE_CAP {
+        let why: String = why.chars().take(60).collect();
+        plx_base::eventlog::log(&format!("posters: online {} -> {why}", hex.get(..8).unwrap_or(hex)));
     }
 }
 
