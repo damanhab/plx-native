@@ -4435,11 +4435,25 @@ pub fn alt_source_count(list: &[AltCopy]) -> usize {
     n
 }
 
-/// **The gate**: is a second pinned source holding `(sid, rk)`? The Detail page's actions row asks
-/// before it draws the control, so with one source there is no button, no layout for it and no
-/// draw call.
+/// **The gate**: is a second COPY of `(sid, rk)` held anywhere ([`alt_copy_count`]: another source,
+/// or another library of the same one)? The Detail page's actions row asks before it draws the
+/// control, so with one copy there is no button, no layout for it and no draw call.
 fn alt_available(state: &MetadataState, sid: plx_plex::plex::ServerId, rk: &str) -> bool {
-    alt_source_count(alt_copies(state, sid, rk)) >= 2
+    alt_copy_count(alt_copies(state, sid, rk)) >= 2
+}
+
+/// How many distinct COPIES (a source and its ratingKey) hold this item. **The fork's gate**: one
+/// server with the film in two libraries (a 1080p one and a 4K Dolby Vision one) is two copies,
+/// each its own page with its own quality, and the owner chooses between them here, as Plex's own
+/// client lets them.
+pub fn alt_copy_count(list: &[AltCopy]) -> usize {
+    let mut n = 0;
+    for (i, c) in list.iter().enumerate() {
+        if !list[..i].iter().any(|p| p.sid == c.sid && p.rk == c.rk) {
+            n += 1;
+        }
+    }
+    n
 }
 
 /// Install the copies resolved for `(item_sid, item_rk)`. Answers whether anything a reader can
@@ -4584,9 +4598,9 @@ fn request_alt_sources(
         return; // nothing portable to match on; the panel stays absent
     }
     let others: Vec<plx_plex::plex::ServerId> = plx_plex::plex::server_ids().collect();
-    if others.len() < 2 {
+    if others.is_empty() {
         adapter.alt_done.store(gen, Ordering::SeqCst);
-        return; // a one-server install pays nothing: no worker, no query, no control
+        return; // no server, nothing to ask (one server is asked: its libraries may hold copies)
     }
     let (rk, guid) = (rk.to_string(), guid.to_string());
     let n = others.len();

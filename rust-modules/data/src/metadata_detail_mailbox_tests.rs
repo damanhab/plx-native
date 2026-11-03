@@ -821,3 +821,16 @@ fn controlled_cancelled_detail_ack_is_recorded_and_recovers_capacity() {
     clear(test_state(), test_adapter());
     crate::stores::tape::reset_for_test();
 }
+
+/// One server holding the film in two libraries is two copies, so the control appears.
+#[test]
+fn two_libraries_of_one_server_are_two_copies() {
+    let _serial = plx_base::testlock::serial();
+    let one = |rk: &str| AltCopy { sid: SRV_A, rk: rk.into(), ..Default::default() };
+    assert_eq!(crate::metadata::alt_copy_count(&[one("4"), one("4")]), 1, "the same copy twice is one");
+    assert_eq!(crate::metadata::alt_copy_count(&[one("4"), one("7")]), 2);
+    alt_clear(test_state());
+    alt_install(test_state(), SRV_A, "4", vec![one("4"), one("7")]);
+    assert!(alt_available(test_state(), SRV_A, "4"), "a 1080p and a 4K library copy offer the choice");
+    alt_clear(test_state());
+}
