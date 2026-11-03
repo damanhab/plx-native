@@ -13,6 +13,19 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  test:
+    if: github.repository == 'damanhab/plx-native'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/host-rust
+        with:
+          sdl: "true"
+      - name: Unit tests for the crates this fork changes
+        shell: bash
+        run: cd rust-modules && cargo "+$RUST_TOOLCHAIN" test --lib -p plx_ui -p plx_screens -p plx_data -p plx_plex
+
   build:
     if: github.repository == 'damanhab/plx-native'
     runs-on: ubuntu-24.04-arm

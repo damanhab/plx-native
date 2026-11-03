@@ -7,7 +7,7 @@
 //! it is handed `registry::captions::deck_policy` and keeps its one line.)
 //!
 //! **A line the setting turns on is never drawn empty**, whatever the tile is. The title line is the
-//! name a reader knows the tile by (a season by its SHOW, an episode by its own title). The details
+//! name a reader knows the tile by (a season or an episode by its SHOW). The details
 //! line is the picked kind's facts, and a tile that has none of them (a season has no length and
 //! often no genre or rating) says its identity line instead (a season "Season 6" or "Specials", an
 //! episode its "S1 · E8" address, a show or movie its year, a collection its size), and a tile with
@@ -116,6 +116,10 @@ pub struct CaptionFacts {
     /// An episode's `(season, episode)` numbers (`0` for one the server did not number), which its
     /// default details line says in place of a year and length.
     pub episode: Option<(u32, u32)>,
+    /// An EPISODE's own title when `title` holds its SHOW's name (the caller's choice, as for a
+    /// season): its address line says it after the address, "S2 · E5 · Pilot", the Home billboard's
+    /// wording. `None` when `title` is already the episode's own.
+    pub episode_title: Option<String>,
     /// A SEASON tile's `(number, its own title)`: `0` for a season the server did not number, and the
     /// title the server gave it ("Season 6", "Specials"). `title` then holds the name of its SHOW, the
     /// name a reader knows the tile by, and this is the season's identity line.
@@ -181,7 +185,12 @@ pub fn caption_lines(policy: &CaptionPolicy, facts: &CaptionFacts, locale: &Loca
     let details = picked.or_else(|| identity_line(facts, locale));
     // The same words are never drawn twice: a season named by its show over its show, or an orphan
     // season over its own title, shows the one line.
-    let details = details.filter(|line| title.as_ref() != Some(line));
+    // An episode whose art prints its address and whose title line already names its show says its
+    // own title there instead.
+    let details = match details {
+        Some(line) if title.as_ref() == Some(&line) => facts.episode_title.clone().filter(|t| !t.is_empty()),
+        other => other,
+    };
     [title, join(details.into_iter().chain(facts.source.clone().filter(|s| !s.is_empty())).collect())]
 }
 
@@ -215,8 +224,11 @@ fn episode_address(f: &CaptionFacts, cx: &LocaleContext) -> Option<String> {
 /// server named no show: the repeat beats an empty line). `None` for an episode with neither.
 fn episode_line(f: &CaptionFacts, cx: &LocaleContext) -> Option<String> {
     f.episode?;
-    f.address_on_art.then(|| f.show.clone().filter(|show| !show.is_empty())).flatten()
-        .or_else(|| episode_address(f, cx))
+    if f.address_on_art {
+        return f.show.clone().filter(|show| !show.is_empty()).or_else(|| episode_address(f, cx));
+    }
+    let own = f.episode_title.clone().filter(|t| !t.is_empty());
+    join(episode_address(f, cx).into_iter().chain(own).collect())
 }
 
 /// The default details line, by kind: a collection is its size, an episode its address, a season its
@@ -350,6 +362,29 @@ mod tests {
         assert_eq!(caption_lines(&p, &facts, l), [Some("Heat".into()), None], "Nothing has no fallback");
         assert_eq!(caption_lines(&CaptionPolicy { title: false, details: DetailsKind::Genre }, &CaptionFacts::default(), l), [None, None],
             "an item with no name and no facts has nothing to say");
+    }
+
+    /// An episode named by its show says its own title after its address, as the Home billboard does.
+    #[test]
+    fn an_episode_named_by_its_show_says_its_own_title_after_its_address() {
+        let l = plx_platform::i18n::current();
+        let facts = CaptionFacts {
+            title: Some("Severance".into()),
+            show: Some("Severance".into()),
+            episode: Some((2, 5)),
+            episode_title: Some("Trojan's Horse".into()),
+            ..Default::default()
+        };
+        let both = CaptionPolicy { title: true, details: DetailsKind::YearLength };
+        assert_eq!(caption_lines(&both, &facts, l),
+            [Some("Severance".into()), Some("S2 \u{b7} E5 \u{b7} Trojan's Horse".into())]);
+        let details = CaptionPolicy { title: false, details: DetailsKind::YearLength };
+        assert_eq!(caption_lines(&details, &facts, l), [None, Some("S2 \u{b7} E5 \u{b7} Trojan's Horse".into())]);
+        // art that prints the address: the details line names the show, or the episode under a title
+        // line that already does
+        let on_art = CaptionFacts { address_on_art: true, ..facts };
+        assert_eq!(caption_lines(&details, &on_art, l), [None, Some("Severance".into())]);
+        assert_eq!(caption_lines(&both, &on_art, l), [Some("Severance".into()), Some("Trojan's Horse".into())]);
     }
 }
 

@@ -16,7 +16,7 @@
 //!   title line shows, the Details picker what the second line says. **A line the setting turns on
 //!   is never drawn empty, for any kind of tile** (`plx_ui::caption_policy::caption_lines`): the title
 //!   line is the name a reader knows the tile by (`tile_facts::caption_facts` puts a season's SHOW
-//!   there, an episode keeps its own title), and a details kind the tile has no facts for says its
+//!   there, and an episode's SHOW, its own title riding its address), and a details kind the tile has no facts for says its
 //!   identity instead (a season "Season 6" or "Specials", an episode "S1 · E8", a show or movie its year, a collection
 //!   its size) and a tile with not even that says what KIND it is ("Episode", "Movie", "Show", "Collection"), so a
 //!   band the setting opens is never open over nothing. A tile that carries a STATE
@@ -240,7 +240,7 @@ mod tests {
         let at = |title, item: &plx_data::pms::PmsMovie, deck| lines(&shelf_label(&CaptionPolicy { title, details: DetailsKind::None }, item, deck));
         assert_eq!(at(false, &ep, true), [None, Some("S2 \u{b7} E5 \u{b7} 25m left".into())]);
         assert_eq!(at(false, &movie, true), [None, Some("25m left".into())]);
-        assert_eq!(at(true, &ep, true), [Some("Pilot".into()), Some("S2 \u{b7} E5 \u{b7} 25m left".into())]);
+        assert_eq!(at(true, &ep, true), [Some("Laura".into()), Some("S2 \u{b7} E5 \u{b7} 25m left".into())], "an episode is named by its show");
         assert_eq!(at(false, &ep, false), [None, None], "off the deck Nothing with Title Off draws no line");
     }
 

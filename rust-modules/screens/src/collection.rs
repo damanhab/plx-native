@@ -1157,14 +1157,14 @@ mod tests {
         let episode = PmsMovie { kind: 3, season_index: 3, ep_index: 4, title: "The Answer".into(),
             show_title: "Example Show".into(), ..Default::default() };
         assert_eq!(member_label(&episode), "S3 · E4");
-        // the focused caption is the Under posters builder's, not a copy of it: an episode is its own
-        // title over its show (its address is already on the poster's mark), and the Title switch
+        // the focused caption is the Under posters builder's, not a copy of it: an episode is its
+        // show over its own title (its address is already on the poster's mark), and the Title switch
         // decides the title
         let text = |c: &Option<std::ffi::CString>| c.as_ref().map(|c| c.to_str().unwrap().to_owned());
         for (title, details, want) in [
-            (true, Details::YearLength, [Some("The Answer"), Some("Example Show")]),
+            (true, Details::YearLength, [Some("Example Show"), Some("The Answer")]),
             (false, Details::YearLength, [None, Some("Example Show")]),
-            (true, Details::None, [Some("The Answer"), None]),
+            (true, Details::None, [Some("Example Show"), None]),
         ] {
             TEST_UNDER_POSTERS.with(|cell| cell.set(Some(UnderPosters { title, details, sort_value: false })));
             let caption = member_caption(&episode);
