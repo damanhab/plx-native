@@ -90,7 +90,9 @@ pub fn of(m: &PmsMovie) -> TileFacts<'_> {
         kind: kind_of(m.kind),
         title: &m.title,
         show_title: &m.show_title,
-        thumb: &m.thumb,
+        // Under posters > Plex online posters: the online record's poster, the server's standing in
+        // (the adapter falls back to it when Plex has none or cannot be reached).
+        thumb: if !m.online_thumb.is_empty() && crate::registry::captions::online_art() { &m.online_thumb } else { &m.thumb },
         still: &m.still,
         art: &m.art,
         year: m.year,

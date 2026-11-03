@@ -43,6 +43,7 @@
 //! into a fixed [`PT_KEYLEN`]-byte array (see [`Pslot::key`]), and a `u16` compare is also the
 //! cheaper half of the per-frame identity scan, so it goes first.
 mod fan;
+mod online;
 mod refresh;
 mod trace;
 
@@ -642,6 +643,11 @@ fn built_key(srv: ServerId, path: &str, w: c_int, h: c_int, png: bool) -> Option
             // synthetic key per collection and stamp, whatever box the consumer draws it in.
             if let Some(fan) = fan::fan_key(path) {
                 return fan;
+            }
+            // Under posters > Plex online posters: the title's online record names the poster, the
+            // worker looks it up (`online`).
+            if let Some(key) = online::online_key(path, w, h) {
+                return key;
             }
             transcode_request(c, path, w, h, png)
         })
@@ -1939,6 +1945,40 @@ fn bake_fan(
     fan::bake(&mut WorkerFanIo { client, srv, rk, cache_gen, disk, token_gen, profile })
 }
 
+/// The worker's fetch of a Plex online poster ([`online`]): the poster plex.tv names for the id,
+/// through this server's transcoder and the same disk tier as any other poster; where Plex has none
+/// or cannot be reached, the server's own poster stands in. Stale refresh is not offered for either:
+/// the id's answer is re-read daily by `online::resolve`, and a changed online poster is a new URL.
+fn load_online(
+    client: &plx_plex::plex::Client,
+    srv: ServerId,
+    k: &online::Key<'_>,
+    cache_gen: u64,
+) -> Loaded<(*mut c_uchar, c_int, c_int)> {
+    let decode = |b: &[u8]| {
+        let (mut dw, mut dh) = (0, 0);
+        let p = img::img_decode_rgba(b.as_ptr(), b.len() as c_int, &mut dw, &mut dh);
+        (!p.is_null()).then_some((p, dw, dh))
+    };
+    let mut asked_again = false;
+    if let online::Resolved::Url(url) = online::resolve(k.hex, cache_gen) {
+        let real = transcode_request(client, &url, k.w, k.h, false);
+        let mut loaded = load_art(client, srv, &real, cache_gen, decode);
+        if loaded.art.is_some() {
+            loaded.stale = None;
+            return loaded;
+        }
+        asked_again = loaded.transient;
+    }
+    if k.fallback.is_empty() {
+        return Loaded { art: None, from_disk: false, stale: None, transient: asked_again };
+    }
+    let fallback = transcode_request(client, k.fallback, k.w, k.h, false);
+    let mut loaded = load_art(client, srv, &fallback, cache_gen, decode);
+    loaded.stale = None;
+    loaded
+}
+
 /// BACKGROUND worker: claim a request, read disk or fetch and decode off-lock, publish pixels.
 /// RAM/GPU residency stays bounded independently of the number of persistent images.
 fn poster_worker() {
@@ -1979,6 +2019,13 @@ fn poster_worker() {
                     )),
                     fan::Got::Transient => transient = true,
                 }
+            } else if let Some(k) = online::parse_key(&key_s) {
+                let loaded = load_online(client, srv, &k, cache_gen);
+                if let Some((p, dw, dh)) = loaded.art {
+                    (px, w, h) = (p, dw, dh);
+                }
+                trace::disk(idx, gen, if loaded.from_disk { "hit" } else { "net" });
+                transient = loaded.transient;
             } else {
                 let loaded = load_art(client, srv, &key_s, cache_gen, |b| {
                     let (mut dw, mut dh) = (0, 0);

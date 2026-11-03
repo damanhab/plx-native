@@ -19,6 +19,8 @@
   "under_posters.sample_genre": "Drama",
   "under_posters.sort_value": "Valor de orden",
   "under_posters.sort_value_detail": "Sustituye la línea de detalles al ordenar.",
+  "under_posters.online_art": "Pósteres de Plex en línea",
+  "under_posters.online_art_detail": "Pósteres de Plex en línea, no del servidor.",
   "under_posters.value_today": "Hoy",
   "under_posters.value_yesterday": "Ayer",
   "under_posters.value_never": "Nunca",

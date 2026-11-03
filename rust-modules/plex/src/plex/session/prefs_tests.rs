@@ -113,7 +113,7 @@ fn every_marker_names_its_own_field() {
     check_row::<InstantDpadSeekingPref>(InstantDpadSeeking::On);
     check_row::<DolbyVisionModePref>(DolbyVisionMode::Off);
     check_row::<DeckPressPref>(DeckPress::Play);
-    check_row::<UnderPostersPref>(UnderPosters { title: true, details: UnderPostersDetails::Genre, sort_value: false });
+    check_row::<UnderPostersPref>(UnderPosters { title: true, details: UnderPostersDetails::Genre, sort_value: false, online_art: false });
     check_row::<AudioEnhancementsPref>(crate::plex::AudioEnhancements { boost_dialog: true, normalize_loudness: false });
     // A5: the remaining `Copy` rows.
     check_row::<AutoSignInPref>(true);
@@ -489,10 +489,10 @@ fn under_posters_is_soft_per_field_and_omitted_at_the_default() {
     }
     // A later build's spelling of `details` keeps the title the viewer chose.
     let kept = under_posters_session(json!({ "title": true, "details": "future_kind" }));
-    assert_eq!(kept.under_posters(), UnderPosters { title: true, details: UnderPostersDetails::YearLength, sort_value: true });
+    assert_eq!(kept.under_posters(), UnderPosters { title: true, details: UnderPostersDetails::YearLength, sort_value: true, online_art: false });
     // And a bad title keeps the details.
     let kept = under_posters_session(json!({ "title": "yes", "details": "genre" }));
-    assert_eq!(kept.under_posters(), UnderPosters { title: false, details: UnderPostersDetails::Genre, sort_value: true });
+    assert_eq!(kept.under_posters(), UnderPosters { title: false, details: UnderPostersDetails::Genre, sort_value: true, online_art: false });
     // The default is not written, so a session predating the field serializes as it did.
     let json = serde_json::to_string(&Session::default()).unwrap();
     assert!(!json.contains("under_posters"), "{json}");
@@ -504,7 +504,7 @@ fn under_posters_round_trips_and_packs_into_one_byte() {
     for details in UnderPostersDetails::LADDER {
         for title in [false, true] {
             for sort_value in [true, false] {
-                let v = UnderPosters { title, details, sort_value };
+                let v = UnderPosters { title, details, sort_value, online_art: false };
                 let session = Session::default().with_pref::<UnderPostersPref>(v);
                 assert_eq!(serde_json::to_string(&session).unwrap().contains("under_posters"), v != UnderPosters::DEFAULT);
                 let back: Session = serde_json::from_str(&serde_json::to_string(&session).unwrap()).unwrap();
@@ -533,12 +533,12 @@ fn sort_value_is_on_by_default_stored_as_its_off_state_and_soft_parsed() {
     // is never written back.
     for old in [json!(true), json!(false), json!("yes")] {
         let read = under_posters_session(json!({"title":true,"details":"genre","show_sort_info":old}));
-        assert_eq!(read.under_posters(), UnderPosters { title: true, details: UnderPostersDetails::Genre, sort_value: true });
+        assert_eq!(read.under_posters(), UnderPosters { title: true, details: UnderPostersDetails::Genre, sort_value: true, online_art: false });
     }
     assert!(!serde_json::to_string(&Session::default().with_pref::<UnderPostersPref>(
         UnderPosters { title: true, ..UnderPosters::DEFAULT })).unwrap().contains("show_sort_info"));
     // Off round-trips through the file and the packed cell, and only Off is written.
-    let off = UnderPosters { title: true, details: UnderPostersDetails::Video, sort_value: false };
+    let off = UnderPosters { title: true, details: UnderPostersDetails::Video, sort_value: false, online_art: false };
     let json = serde_json::to_string(&Session::default().with_pref::<UnderPostersPref>(off)).unwrap();
     assert!(json.contains("sort_value_off"), "{json}");
     let on = serde_json::to_string(&Session::default().with_pref::<UnderPostersPref>(
@@ -550,7 +550,7 @@ fn sort_value_is_on_by_default_stored_as_its_off_state_and_soft_parsed() {
     // A malformed value costs only that field and reads as the default On.
     for bad in [json!("yes"), json!(3), Value::Null, json!([true])] {
         let read = under_posters_session(json!({"title":true,"details":"genre","sort_value_off":bad}));
-        assert_eq!(read.under_posters(), UnderPosters { title: true, details: UnderPostersDetails::Genre, sort_value: true });
+        assert_eq!(read.under_posters(), UnderPosters { title: true, details: UnderPostersDetails::Genre, sort_value: true, online_art: false });
     }
     let read = under_posters_session(json!({"title":true,"sort_value_off":true}));
     assert!(!read.under_posters().sort_value && read.under_posters().title);

@@ -85,6 +85,7 @@ enum UpId {
     Title,
     Details,
     SortValue,
+    OnlineArt,
     Reset,
 }
 
@@ -94,6 +95,7 @@ impl FormId for UpId {
             UpId::Title => 1,
             UpId::Details => 2,
             UpId::SortValue => 3,
+            UpId::OnlineArt => 4,
             UpId::Reset => 30,
         })
     }
@@ -105,6 +107,7 @@ enum UpAction {
     /// The Details row is a push (`RowKind::Nav`): the form answers it with the page, never with this.
     Details,
     SortValue,
+    OnlineArt,
     Reset,
 }
 
@@ -129,6 +132,8 @@ fn under_posters_form(v: UnderPosters) -> Form<UpId, UpAction, SettingsPage> {
         );
     let rows = rows.item(UpId::SortValue, RowKind::Toggle, UpAction::SortValue,
         Row::new(msg::under_posters_sort_value()).detail(msg::under_posters_sort_value_detail()).toggle(v.sort_value));
+    let rows = rows.item(UpId::OnlineArt, RowKind::Toggle, UpAction::OnlineArt,
+        Row::new(msg::under_posters_online_art()).detail(msg::under_posters_online_art_detail()).toggle(v.online_art));
     let reset = FormSection::new("").item(
         UpId::Reset,
         RowKind::Button,
@@ -216,6 +221,7 @@ impl UnderPostersPage {
             UpAction::Title => UnderPosters { title: !v.title, ..v },
             UpAction::Details => return,
             UpAction::SortValue => UnderPosters { sort_value: !v.sort_value, ..v },
+            UpAction::OnlineArt => UnderPosters { online_art: !v.online_art, ..v },
             UpAction::Reset => UnderPosters::DEFAULT,
         };
         self.send(next, fx);
@@ -476,7 +482,7 @@ impl FormId for DetailsId {
 /// row's sample on the right. `None` for Nothing; a kind the poster has no fact for samples the identity
 /// line the tile says instead (its year), as the preview draws it.
 fn details_sample(d: UnderPostersDetails, facts: &CaptionFacts) -> Option<String> {
-    lines_of(UnderPosters { title: false, details: d, sort_value: false }, facts)[1].clone()
+    lines_of(UnderPosters { title: false, details: d, sort_value: false, online_art: false }, facts)[1].clone()
 }
 
 /// The picker's order: Nothing first, then the lines in the ladder's order (the board's list).

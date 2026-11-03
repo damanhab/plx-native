@@ -79,6 +79,14 @@
     "value": "Replaces the details line while a library is sorted.",
     "description": "Detail line under the Sort value switch: the value line replaces the details line while the library is sorted."
   },
+  "under_posters.online_art": {
+    "value": "Plex online posters",
+    "description": "Switch on the Under posters page: draw each poster from Plex's online metadata (the title's own record on plex.tv) instead of the artwork the server chose, falling back to the server's when Plex has none. Default off, per profile. Short noun phrase."
+  },
+  "under_posters.online_art_detail": {
+    "value": "Posters from Plex online, not your server.",
+    "description": "Detail line under the Plex online posters switch."
+  },
   "under_posters.value_today": {
     "value": "Today",
     "description": "Sort value in a library grid sorted by a date (Date added, Date viewed, release date): the date is today. One short word."

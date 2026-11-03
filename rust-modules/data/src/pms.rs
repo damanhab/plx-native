@@ -166,6 +166,12 @@ pub struct PmsMovie {
     /// The first video stream carries Dolby Vision (`hdr` is then true too).
     #[serde(default, skip_serializing_if = "is_false")]
     pub dv: bool,
+    /// The poster as Plex's ONLINE record has it ([`plx_plex::plex::online_poster_path`]:
+    /// the title's catalog id with `thumb` as its stand-in), for Under posters > Plex online
+    /// posters. A movie or show by its own id, an episode by its show's (its portrait card IS the
+    /// show's poster); empty for a season, a collection, or a row with no `plex://` id.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub online_thumb: String,
     /// `audienceRating` (0..10), or `None` when the server sent none.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub audience_rating: Option<f32>,
@@ -653,6 +659,14 @@ pub fn parse_item(it: &plx_plex::plex::Metadata, sid: ServerId) -> PmsMovie {
         &it.grandparent_thumb
     };
     m.thumb = clean(thumb);
+    let catalog_id = match m.kind {
+        0 | KIND_SHOW => m.guid,
+        3 => m.show_guid,
+        _ => None,
+    };
+    if let Some(hex) = catalog_id {
+        m.online_thumb = plx_plex::plex::online_poster_path(&hex, &m.thumb);
+    }
     // …and the item's OWN thumb, unsubstituted. The line above is right for a POSTER shelf and
     // wrong for a landscape one, and both exist: an episode's own thumb is a 16:9 still, so Home's
     // portrait cards want the show poster, while a 420x236 tile wants the still — with the

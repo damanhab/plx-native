@@ -19,6 +19,8 @@
   "under_posters.sample_genre": "Драма",
   "under_posters.sort_value": "Значение сортировки",
   "under_posters.sort_value_detail": "Заменяет строку сведений при сортировке.",
+  "under_posters.online_art": "Постеры Plex онлайн",
+  "under_posters.online_art_detail": "Постеры из Plex онлайн, а не с сервера.",
   "under_posters.value_today": "Сегодня",
   "under_posters.value_yesterday": "Вчера",
   "under_posters.value_never": "Никогда",

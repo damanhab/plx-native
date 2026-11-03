@@ -58,6 +58,13 @@ pub fn policy() -> CaptionPolicy {
     crate::registry::caption_policy_of(plx_media::route::under_posters())
 }
 
+/// **Under posters > Plex online posters**: whether a poster tile asks for Plex's online poster
+/// (`tile_facts::of`, which then hands the row's `online_thumb` as its thumb). Read from the same
+/// setting as [`policy`] (no test override: a test's tiles keep the server's poster).
+pub fn online_art() -> bool {
+    plx_media::route::under_posters().online_art
+}
+
 #[cfg(test)]
 thread_local! {
     /// A per-thread Under posters setting for a test, so it never writes the process-wide cell the

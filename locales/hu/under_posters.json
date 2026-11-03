@@ -19,6 +19,8 @@
   "under_posters.sample_genre": "Dráma",
   "under_posters.sort_value": "Rendezési érték",
   "under_posters.sort_value_detail": "Felváltja a részletek sorát, amíg a filmtár rendezett.",
+  "under_posters.online_art": "Plex online poszterek",
+  "under_posters.online_art_detail": "Poszterek a Plex online-ról, nem a szerverről.",
   "under_posters.value_today": "Ma",
   "under_posters.value_yesterday": "Tegnap",
   "under_posters.value_never": "Soha",

@@ -1297,7 +1297,14 @@ pub struct UnderPosters {
     /// every card (the Movies, TV Shows, Seasons and Episodes grids; the Library's `registry::sort_info`). On by default.
     #[serde(rename = "sort_value_off", with = "sort_value_off", skip_serializing_if = "sort_value_off::is_on")]
     pub sort_value: bool,
+    /// Posters come from Plex's online metadata (the title's own `plex://` record) instead of the
+    /// art the server chose, the server's art standing in where Plex has none. Off by default;
+    /// written only while On.
+    #[serde(deserialize_with = "de_soft_under_posters_title", skip_serializing_if = "is_off")]
+    pub online_art: bool,
 }
+
+fn is_off(on: &bool) -> bool { !*on }
 
 impl Default for UnderPosters {
     fn default() -> Self { Self::DEFAULT }
@@ -1330,17 +1337,18 @@ fn de_soft_under_posters_details<'de, D: Deserializer<'de>>(d: D) -> Result<Unde
 
 impl UnderPosters {
     /// The defaults, as a `const` for callers that compare against them.
-    pub const DEFAULT: UnderPosters = UnderPosters { title: false, details: UnderPostersDetails::YearLength, sort_value: true };
+    pub const DEFAULT: UnderPosters = UnderPosters { title: false, details: UnderPostersDetails::YearLength, sort_value: true, online_art: false };
 
     /// One byte for the live cell: title in bit 0, details in bits 1-3, "sort value Off" in bit 4
-    /// (so a zero byte is the default's On).
+    /// (so a zero byte is the default's On), Plex online posters in bit 5.
     pub fn pack(self) -> u8 {
         u8::from(self.title) | (self.details.index() << 1) | (u8::from(!self.sort_value) << 4)
+            | (u8::from(self.online_art) << 5)
     }
 
     /// The inverse of [`UnderPosters::pack`]; an out-of-range details index is the default.
     pub fn unpack(b: u8) -> UnderPosters {
-        UnderPosters { title: b & 1 != 0, details: UnderPostersDetails::from_index((b >> 1) & 0b111), sort_value: b & 16 == 0 }
+        UnderPosters { title: b & 1 != 0, details: UnderPostersDetails::from_index((b >> 1) & 0b111), sort_value: b & 16 == 0, online_art: b & 32 != 0 }
     }
 }
 

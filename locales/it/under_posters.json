@@ -19,6 +19,8 @@
   "under_posters.sample_genre": "Drammatico",
   "under_posters.sort_value": "Valore di ordinamento",
   "under_posters.sort_value_detail": "Sostituisce la riga dei dettagli mentre una libreria è ordinata.",
+  "under_posters.online_art": "Locandine Plex online",
+  "under_posters.online_art_detail": "Locandine da Plex online, non dal server.",
   "under_posters.value_today": "Oggi",
   "under_posters.value_yesterday": "Ieri",
   "under_posters.value_never": "Mai",

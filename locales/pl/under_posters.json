@@ -19,6 +19,8 @@
   "under_posters.sample_genre": "Dramat",
   "under_posters.sort_value": "Wartość sortowania",
   "under_posters.sort_value_detail": "Zastępuje wiersz szczegółów przy sortowaniu.",
+  "under_posters.online_art": "Plakaty Plex online",
+  "under_posters.online_art_detail": "Plakaty z Plex online, nie z serwera.",
   "under_posters.value_today": "Dziś",
   "under_posters.value_yesterday": "Wczoraj",
   "under_posters.value_never": "Nigdy",

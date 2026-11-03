@@ -488,6 +488,33 @@ pub fn catalog_hex_of_guid(guid: &str) -> Option<[u8; 12]> {
     Some(out)
 }
 
+/// **A poster path that asks for Plex's ONLINE poster of a title** (Settings > Libraries > Under
+/// posters > Plex online posters): the prefix, the title's 24-hex catalog id, then the server's own
+/// poster path, which stands in when Plex has none or cannot be reached. Not a server path: the
+/// poster adapter recognises it before any request is built, looks the id up on plex.tv's metadata
+/// provider and fetches the poster it names through the server's transcoder.
+pub const ONLINE_POSTER_PREFIX: &str = "/plx/online/";
+
+/// The [`ONLINE_POSTER_PREFIX`] path of catalog id `hex`, `fallback` the server's poster path.
+pub fn online_poster_path(hex: &[u8; 12], fallback: &str) -> String {
+    let mut s = String::with_capacity(ONLINE_POSTER_PREFIX.len() + 24 + fallback.len());
+    s.push_str(ONLINE_POSTER_PREFIX);
+    for b in hex {
+        s.push_str(&format!("{b:02x}"));
+    }
+    s.push_str(fallback);
+    s
+}
+
+/// `(hex, fallback)` back out of an [`online_poster_path`]; `None` for every other path.
+pub fn parse_online_poster_path(path: &str) -> Option<(&str, &str)> {
+    let rest = path.strip_prefix(ONLINE_POSTER_PREFIX)?;
+    let hex = rest.get(..24)?;
+    let fallback = &rest[24..];
+    (hex.bytes().all(|b| b.is_ascii_hexdigit()) && (fallback.is_empty() || fallback.starts_with('/')))
+        .then_some((hex, fallback))
+}
+
 /// WORKER. The catalog id to write to: the one the row already carries, else the one the item's own
 /// server record names. `fetch` is `|| client.metadata(rk).map(|m| m.guid)` (or `grandparent`'s
 /// `show_rk` read for an episode's show); it is not called when `known` is set, so a press from a
@@ -1294,6 +1321,10 @@ mod tests {
         });
         let show = listing(r#"{"type":"show","ratingKey":"2","childCount":3,"leafCount":30,"viewedLeafCount":12}"#);
         assert_eq!((show.season_count, show.leaf_count, show.viewed_leaf_count), (Some(3), Some(30), Some(12)));
+        let path = super::online_poster_path(&[0xab; 12], "/library/metadata/9/thumb/1");
+        assert_eq!(path, "/plx/online/abababababababababababab/library/metadata/9/thumb/1");
+        assert_eq!(super::parse_online_poster_path(&path), Some(("abababababababababababab", "/library/metadata/9/thumb/1")));
+        assert_eq!(super::parse_online_poster_path("/library/metadata/9/thumb/1"), None);
         let bare = listing(r#"{"type":"movie","ratingKey":"3","childCount":4}"#);
         assert_eq!(bare, super::ListingFacts::default(), "nothing sent: nothing known (a movie has no seasons)");
         let dv = listing(r#"{"type":"movie","ratingKey":"4",

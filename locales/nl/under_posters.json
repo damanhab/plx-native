@@ -19,6 +19,8 @@
   "under_posters.sample_genre": "Drama",
   "under_posters.sort_value": "Sorteerwaarde",
   "under_posters.sort_value_detail": "Vervangt de detailregel zolang een bibliotheek gesorteerd is.",
+  "under_posters.online_art": "Plex online-posters",
+  "under_posters.online_art_detail": "Posters van Plex online, niet van de server.",
   "under_posters.value_today": "Vandaag",
   "under_posters.value_yesterday": "Gisteren",
   "under_posters.value_never": "Nooit",

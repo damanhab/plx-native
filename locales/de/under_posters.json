@@ -19,6 +19,8 @@
   "under_posters.sample_genre": "Drama",
   "under_posters.sort_value": "Sortierwert",
   "under_posters.sort_value_detail": "Ersetzt die Detailzeile, solange eine Bibliothek sortiert ist.",
+  "under_posters.online_art": "Plex-Online-Poster",
+  "under_posters.online_art_detail": "Poster von Plex online statt vom Server.",
   "under_posters.value_today": "Heute",
   "under_posters.value_yesterday": "Gestern",
   "under_posters.value_never": "Nie",

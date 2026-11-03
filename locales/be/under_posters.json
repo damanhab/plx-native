@@ -19,6 +19,8 @@
   "under_posters.sample_genre": "Драма",
   "under_posters.sort_value": "Значэнне сартавання",
   "under_posters.sort_value_detail": "Замяняе радок звестак, пакуль бібліятэка сартуецца.",
+  "under_posters.online_art": "Постэры Plex анлайн",
+  "under_posters.online_art_detail": "Постэры з Plex анлайн, а не з сервера.",
   "under_posters.value_today": "Сёння",
   "under_posters.value_yesterday": "Учора",
   "under_posters.value_never": "Ніколі",
