@@ -201,6 +201,10 @@ struct Cell {
     elem: u32,
     src: u16,
     thumb: String,
+    /// The Plex online poster path (`online_poster_path`, the server's `thumb` standing in), or
+    /// empty when the tile has no catalog id or no server to fetch through; drawn instead of
+    /// `thumb` while Under posters > Plex online posters is On, read at the draw.
+    online: String,
     watched: bool,
     resume: Option<f32>,
     blur: Option<[[f32; 3]; 4]>,
@@ -334,15 +338,16 @@ impl Page {
             let src = t.copy.map(|c| c.server_id).or(self.art_server.filter(|_| !thumb.is_empty())).map_or(0, |s| s.raw());
             // Under posters > Plex online posters: the title's own catalog poster, through the same
             // server, with the path above standing in when Plex has none.
-            let thumb = if src != 0 && t.row.hex != [0; 12] && crate::registry::captions::online_art() {
+            let online = if src != 0 && t.row.hex != [0; 12] {
                 plx_plex::plex::online_poster_path(&t.row.hex, &thumb)
-            } else { thumb };
+            } else { String::new() };
             // One corner mark per tile: an unplayable mark replaces the watched tick.
             let watched = facts.is_some_and(|f| f.watched) && !tiles::owns_corner(t.state);
             self.cells.push(Cell {
                 elem,
                 src,
                 thumb,
+                online,
                 watched,
                 resume: facts.and_then(|f| f.resume),
                 blur: facts.and_then(|f| f.blur).or_else(|| t.copy.and_then(|c| c.blur).map(unquantize)),
@@ -491,7 +496,7 @@ fn tile_facts<'a>(t: &'a WatchTile, c: &'a Cell) -> TileFacts<'a> {
             WatchKind::Show => TileKind::Show,
         },
         title: &t.row.title,
-        thumb: &c.thumb,
+        thumb: if !c.online.is_empty() && crate::registry::captions::online_art() { &c.online } else { &c.thumb },
         year: t.row.year.unwrap_or(0),
         resume: c.resume.map(|frac| Resume { frac, left_ms: 0 }),
         watched: c.watched,

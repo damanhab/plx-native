@@ -109,7 +109,7 @@ fn ask(hex: &str) -> Resolved {
 /// answer's kind; never a URL or a credential), so a tile that keeps the server's poster says why.
 fn note(hex: &str, why: &str) {
     use std::sync::atomic::{AtomicU32, Ordering};
-    const NOTE_CAP: u32 = 60;
+    const NOTE_CAP: u32 = 400;
     static NOTED: AtomicU32 = AtomicU32::new(0);
     if NOTED.fetch_add(1, Ordering::Relaxed) < NOTE_CAP {
         let why: String = why.chars().take(60).collect();
