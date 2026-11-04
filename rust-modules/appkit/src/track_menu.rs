@@ -65,7 +65,7 @@
 //! reason ([`table_form`]'s `memory_note`, `route::cur_memory_note`), absent everywhere else.
 //!
 //! **Style is a drill-in, and the Subtitles tab is a page stack** (`docs/player-submenus.md`). The
-//! Style row is a [`RowKind::Nav`] onto [`TrackPage::Style`], whose Size, Position and Color rows
+//! Style row is a [`RowKind::Nav`] onto [`TrackPage::Style`], whose Size, Position, Color and Font rows
 //! each read out their current value and push a picker page ([`TrackPage::Picker`]) of
 //! [`RowKind::Choice`] rows with the current rung checked. A push remembers the opener's id and the
 //! scroll ([`page_stack::Saved`]); a pop ([`TrackMenuState::pop`], LEFT or BACK, or a click on the title band,
@@ -102,7 +102,7 @@
 use plx_data::metadata;
 use plx_data::metadata::sub_layout::{self, LangId, OtherLang, RowBadge, RowTarget, SubHeader, SubModel, SubRow, SubTrack};
 use plx_data::metadata::track_label;
-use plx_plex::plex::session::{SubtitlePosition, SubtitleSize, SubtitleTone};
+use plx_plex::plex::session::{SubtitleFont, SubtitlePosition, SubtitleSize, SubtitleTone};
 use plx_ui::frame::Budget;
 use plx_ui::geom::IndexElem;
 use plx_machine::machine::{Canon, Cx, EntryId, FocusKey, GroupId, Host, Measure};
@@ -199,10 +199,11 @@ pub enum StyleField {
     Size,
     Position,
     Color,
+    Font,
 }
 
 impl StyleField {
-    pub const ALL: [StyleField; 3] = [StyleField::Size, StyleField::Position, StyleField::Color];
+    pub const ALL: [StyleField; 4] = [StyleField::Size, StyleField::Position, StyleField::Color, StyleField::Font];
 
     fn ordinal(self) -> u32 {
         self as u32
@@ -214,6 +215,7 @@ impl StyleField {
             Self::Size => msg::widgets_tracks_style_size(),
             Self::Position => msg::widgets_tracks_style_position(),
             Self::Color => msg::widgets_tracks_color(),
+            Self::Font => msg::widgets_tracks_style_font(),
         }
     }
 
@@ -223,6 +225,7 @@ impl StyleField {
             Self::Size => SubtitleSize::LADDER.len(),
             Self::Position => SubtitlePosition::LADDER.len(),
             Self::Color => SubtitleTone::LADDER.len(),
+            Self::Font => SubtitleFont::LADDER.len(),
         }
     }
 
@@ -232,6 +235,7 @@ impl StyleField {
             Self::Size => subtitle_size_label(SubtitleSize::from_index(i as u8)),
             Self::Position => subtitle_position_label(SubtitlePosition::from_index(i as u8)),
             Self::Color => tone_label(SubtitleTone::from_index(i as u8)),
+            Self::Font => subtitle_font_label(SubtitleFont::from_index(i as u8)),
         }
     }
 }
@@ -240,7 +244,7 @@ impl StyleField {
 /// page stack, not a value of this type (`docs/player-submenus.md`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TrackPage {
-    /// Size, Position and Color, each a drill-in showing its current value.
+    /// Size, Position, Color and Font, each a drill-in showing its current value.
     Style,
     /// One field's picker: a checked [`TrackRow::Choice`] per rung.
     Picker(StyleField),
@@ -484,6 +488,8 @@ pub struct TrackMenuState {
     size: SubtitleSize,
     /// The caption position the Position rows read out and check.
     position: SubtitlePosition,
+    /// The plain-text subtitle face the Font rows read out and check.
+    font: SubtitleFont,
     /// The pages pushed above the Subtitles root, outermost first (empty = the root). Each entry
     /// carries the opener and scroll of the page beneath it.
     pages: PageStack<TrackPage, TrackRow>,
@@ -631,6 +637,8 @@ pub enum TrackCommit {
     /// The caption's vertical position, picked on the Style > Position page
     /// (`route::select_subtitle_position`).
     SubtitlePosition(SubtitlePosition),
+    /// A Font picker pick: the plain-text subtitle face (`route::select_subtitle_font`).
+    SubtitleFont(SubtitleFont),
     /// The caption's timing offset in ms (`player::set_subtitle_offset`) — produced by the Timing
     /// capsule overlay (plan §4), not by this panel: the Timing ROW here only opens that capsule
     /// ([`TrackOk::OpenTiming`]). The variant stays here because `TrackCommit` is the one
@@ -710,6 +718,7 @@ impl TrackMenuState {
             tone: plx_media::player::subtitle_tone(),
             size: plx_media::route::subtitle_size(),
             position: plx_media::route::subtitle_position(),
+            font: plx_media::route::subtitle_font(),
             pages: PageStack::new(),
             renderer: SubRenderer::Text,
             sub_sig: None,
@@ -1407,6 +1416,14 @@ impl TrackMenuState {
                 self.tone = tone;
                 TrackCommit::SubtitleTone(tone)
             }
+            StyleField::Font => {
+                let font = SubtitleFont::from_index(rung as u8);
+                if font == self.font {
+                    return TrackOk::Inert;
+                }
+                self.font = font;
+                TrackCommit::SubtitleFont(font)
+            }
         };
         if let Some(page) = self.pages.top() {
             let form = self.page_form(page);
@@ -1421,6 +1438,7 @@ impl TrackMenuState {
             StyleField::Size => self.size.index(),
             StyleField::Position => self.position.index(),
             StyleField::Color => self.tone.index(),
+            StyleField::Font => self.font.index(),
         };
         rung as usize
     }
@@ -1710,7 +1728,14 @@ impl TrackMenuState {
                 RowKind::Nav(TrackPage::Picker(StyleField::Color)),
                 (),
                 field_row(StyleField::Color),
-            );
+            )
+            .item(
+                TrackRow::OpenField(StyleField::Font),
+                RowKind::Nav(TrackPage::Picker(StyleField::Font)),
+                (),
+                field_row(StyleField::Font),
+            )
+            .disabled(!reaches);
         if let Some(note) = self.renderer.note() {
             sec = sec.note(note);
         }
@@ -2399,6 +2424,22 @@ pub fn subtitle_size_label(size: SubtitleSize) -> &'static str {
         SubtitleSize::Large => msg::settings_playback_subtitle_size_large(),
         SubtitleSize::ExtraLarge => msg::settings_playback_subtitle_size_extra_large(),
         SubtitleSize::Huge => msg::settings_playback_subtitle_size_huge(),
+    }
+}
+
+/// A subtitle font as the pickers and read-outs name it (the player's Style page and Settings'
+/// Playback): the app's own is a phrase, every other choice is a face's own name, the same in every
+/// language.
+pub fn subtitle_font_label(font: SubtitleFont) -> &'static str {
+    match font {
+        SubtitleFont::App => plx_platform::i18n::msg::settings_playback_subtitle_font_app(),
+        SubtitleFont::LgDisplay => "LG Display",
+        SubtitleFont::Arial => "Arial",
+        SubtitleFont::Helvetica => "Helvetica",
+        SubtitleFont::Times => "Times",
+        SubtitleFont::DroidSans => "Droid Sans",
+        SubtitleFont::MuseoSans => "Museo Sans",
+        SubtitleFont::Tinos => "Tinos",
     }
 }
 
@@ -5937,6 +5978,34 @@ mod style_page_tests {
         teardown(&ps);
     }
 
+    /// The Font picker lists every face on the ladder and a pick commits that face live, the page
+    /// staying open with the checkmark moved.
+    #[test]
+    fn a_font_pick_commits_the_face_live() {
+        let _g = plx_base::testlock::serial();
+        let (mut menu, ps, store) = open_text();
+        focus_id(&mut menu, TrackRow::Style);
+        assert_eq!(menu.on_ok(store.view()), TrackOk::Navigated);
+        focus_id(&mut menu, TrackRow::OpenField(StyleField::Font));
+        assert_eq!(menu.on_ok(store.view()), TrackOk::Navigated, "Font");
+        assert_eq!(menu.page_path(), [TrackPage::Style, TrackPage::Picker(StyleField::Font)]);
+        for (i, font) in SubtitleFont::LADDER.iter().enumerate() {
+            assert_eq!(row_of(&menu, TrackRow::Choice(StyleField::Font, i)).label, subtitle_font_label(*font));
+        }
+        let current = menu.current_rung(StyleField::Font);
+        let other = (current + 1) % StyleField::Font.rungs();
+        focus_id(&mut menu, TrackRow::Choice(StyleField::Font, other));
+        assert_eq!(
+            menu.on_ok(store.view()),
+            TrackOk::Commit {
+                commit: TrackCommit::SubtitleFont(SubtitleFont::from_index(other as u8)),
+                keep_open: true
+            }
+        );
+        assert!(row_of(&menu, TrackRow::Choice(StyleField::Font, other)).checked);
+        teardown(&ps);
+    }
+
     /// Picking a rung commits it live, keeps the panel and page open and moves the checkmark; the
     /// already-checked rung is inert.
     #[test]
@@ -5980,8 +6049,8 @@ mod style_page_tests {
         teardown(&ps);
     }
 
-    /// Locks per renderer kind: plain text leaves all three live; an image subtitle dims Size and
-    /// Position with the image note; ASS dims them with its own; Color stays live in every case,
+    /// Locks per renderer kind: plain text leaves every field live; an image subtitle dims Size,
+    /// Position and Font with the image note; ASS dims them with its own; Color stays live in every case,
     /// and a dimmed row is inert for OK.
     #[test]
     fn size_and_position_lock_by_renderer_kind_and_color_never_does() {
@@ -5996,7 +6065,7 @@ mod style_page_tests {
             focus_id(&mut menu, TrackRow::Style);
             assert_eq!(menu.on_ok(store.view()), TrackOk::Navigated, "{codec}: Style itself is live");
             let locked = renderer != SubRenderer::Text;
-            for field in [StyleField::Size, StyleField::Position] {
+            for field in [StyleField::Size, StyleField::Position, StyleField::Font] {
                 assert_eq!(row_of(&menu, TrackRow::OpenField(field)).dim, locked, "{codec} {field:?}");
             }
             assert!(!row_of(&menu, TrackRow::OpenField(StyleField::Color)).dim, "{codec}: Color stays live");

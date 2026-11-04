@@ -707,6 +707,10 @@
     "value": "The typeface of plain subtitles. The other fonts are the TV's own. Styled subtitles keep their own fonts.",
     "description": "Explanation under the title of the Subtitle font picker. Styled (ASS/SSA) subtitles carry their own fonts and picture subtitles (PGS, VobSub) are images, so the setting does not reach them."
   },
+  "settings.playback.subtitle_font.sample": {
+    "value": "Where were you last night?",
+    "description": "Subtitle font picker: a short line of dialogue drawn in the focused font, the way a subtitle would look. Keep it about this short (it must fit one line in a narrow frame)."
+  },
   "settings.playback.hdr_overlay": {
     "value": "HDR overlay brightness",
     "description": "Settings row title and picker title: how bright the player's controls and subtitles are drawn while the picture is HDR or Dolby Vision."

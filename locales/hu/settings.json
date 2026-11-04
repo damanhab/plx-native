@@ -171,6 +171,7 @@
   "settings.playback.subtitle_font": "Felirat betűtípusa",
   "settings.playback.subtitle_font.app": "Alkalmazás betűtípusa",
   "settings.playback.subtitle_font.copy": "Az egyszerű feliratok betűtípusa. A többi betűtípus a tévéé. A formázott feliratok megtartják a sajátjukat.",
+  "settings.playback.subtitle_font.sample": "Hol voltál tegnap este?",
   "settings.playback.hdr_overlay": "Kezelőfelület fényereje HDR-nél",
   "settings.playback.hdr_overlay.full": "100%",
   "settings.playback.hdr_overlay.three_quarters": "75%",

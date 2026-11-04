@@ -168,6 +168,7 @@
   "widgets.tracks.style": "Styl",
   "widgets.tracks.style_size": "Rozmiar",
   "widgets.tracks.style_position": "Położenie",
+  "widgets.tracks.style_font": "Czcionka",
   "widgets.tracks.style_image_note": "Rozmiar i położenie tych napisów są ustalone.",
   "widgets.tracks.style_styled_note": "Rozmiar i położenie tych napisów są ustalone.",
   "widgets.tracks.timing": "Synchronizacja",

@@ -198,6 +198,14 @@ impl PickerPage {
             }
         }
     }
+    /// The font the Subtitle font picker's sample shows: the FOCUSED option, so walking the list
+    /// previews each face before it is chosen; the current one while no option has focus.
+    fn sampled_font(&self) -> SubtitleFont {
+        match self.form.selected_id() {
+            Some(OptionId::Choice(Value::SubtitleFont(font))) => *font,
+            _ => plx_media::route::subtitle_font(),
+        }
+    }
     /// An account write is in flight: leaving now would orphan its receipt.
     fn writing_account(&self) -> bool {
         self.txn.saving && matches!(self.txn.pending, Some(Pending::Account(_)))
@@ -332,11 +340,76 @@ impl Screen<InnerHost> for PickerPage {
     fn prepare(&mut self, _b: &mut Budget, _cx: &Cx<'_, InnerHost>) {}
     fn draw(&mut self, f: &mut DrawFrame<'_, '_, InnerHost>) {
         plx_ui::screen::Part::<InnerHost>::draw(&mut self.view(), f, Rect::FULL);
+        if self.state.field == PickerKind::SubtitleFont {
+            font_sample::draw(f.painter, self.sampled_font());
+        }
         self.alert.draw(f, self.entry);
     }
     fn render(&self) -> RenderStrategy { RenderStrategy::Page }
     fn focus_source(&self) -> FocusSource { FocusSource::Engine }
     fn hit_source(&self) -> HitSource { HitSource::Engine }
+}
+
+/// **The Subtitle font picker's sample**: a frame in the narrative column, under the copy, holding
+/// one line of dialogue drawn the way a plain subtitle is (white ink, a dark edge) in the focused
+/// face. The television's faces are not in the UI's own text chain, so the line is rasterized from
+/// the font FILE by the subtitle library (`plx_gfx::text::face_sample_tex`); the app's own face is
+/// its bold cut, the one the subtitles use. A face that will not open (a set without that file, a
+/// host) falls back to the app's own text, so the frame is never empty.
+mod font_sample {
+    use super::*;
+    use plx_ui::Painter;
+
+    /// The frame: as wide as the Under posters preview, resting on the narrative column's floor.
+    const FRAME_W: f32 = 660.0;
+    const FRAME_H: f32 = 220.0;
+    const FRAME_RAD: f32 = 24.0;
+    /// The air either side of the line; a line wider than the frame less this is drawn smaller.
+    const PAD_X: f32 = 32.0;
+    /// The line's size in pixels per em and its subtitle edge.
+    const PX: i32 = 46;
+    const EDGE_PX: f32 = 2.5;
+    /// The scene behind the line: a dim picture, darker toward its foot like a film still.
+    const SCENE_TOP: [f32; 4] = [0.20, 0.23, 0.28, 1.0];
+    const SCENE_BOT: [f32; 4] = [0.07, 0.08, 0.10, 1.0];
+    const INK: [f32; 4] = [1.0, 1.0, 1.0, 1.0];
+    const EDGE: [f32; 4] = [0.0, 0.0, 0.0, 0.85];
+
+    fn frame() -> Rect {
+        let narrative = RouteLayout::screen().narrative;
+        Rect::new(narrative.x, narrative.y + narrative.h - FRAME_H, FRAME_W, FRAME_H)
+    }
+
+    fn face_path(font: SubtitleFont) -> std::path::PathBuf {
+        plx_media::player::text_style::tv_face_path(font).unwrap_or_else(|| plx_gfx::text::app_font_path(true))
+    }
+
+    pub(super) fn draw(p: Painter, font: SubtitleFont) {
+        let frame = frame();
+        p.rect(frame, FRAME_RAD, SCENE_TOP, SCENE_BOT, 0.0);
+        p.rring(frame, FRAME_RAD, 1.0, theme::HAIRLINE);
+        let text = plx_platform::i18n::msg::settings_playback_subtitle_font_sample();
+        let baseline = frame.y + frame.h * 0.62;
+        match plx_gfx::text::face_sample_tex(&face_path(font), PX, text) {
+            Some((tex, w, h, ascent)) => {
+                // a line wider than the frame is drawn smaller, never cut
+                let k = ((frame.w - 2.0 * PAD_X) / w as f32).min(1.0);
+                let (w, h) = (w as f32 * k, h as f32 * k);
+                let r = Rect::new((frame.cx() - w * 0.5).round(), baseline - ascent as f32 * k, w, h);
+                let d = EDGE_PX * std::f32::consts::FRAC_1_SQRT_2;
+                for (dx, dy) in [(EDGE_PX, 0.0), (-EDGE_PX, 0.0), (0.0, EDGE_PX), (0.0, -EDGE_PX), (d, d), (-d, d), (d, -d), (-d, -d)] {
+                    p.tex(tex, Rect::new(r.x + dx, r.y + dy, r.w, r.h), 0.0, EDGE);
+                }
+                p.tex(tex, r, 0.0, INK);
+            }
+            None => {
+                let size = theme::size::TITLE;
+                let Ok(c) = std::ffi::CString::new(text) else { return };
+                let y = plx_gfx::text::text_vcenter_y(size, 1, frame.y + frame.h * 0.5);
+                p.text(c.as_ptr(), frame.cx(), y, size, INK, 1, 1);
+            }
+        }
+    }
 }
 
 #[cfg(test)]

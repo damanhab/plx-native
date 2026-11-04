@@ -160,6 +160,7 @@
   "widgets.tracks.style": "Stijl",
   "widgets.tracks.style_size": "Grootte",
   "widgets.tracks.style_position": "Positie",
+  "widgets.tracks.style_font": "Lettertype",
   "widgets.tracks.style_image_note": "Beeldondertitels houden hun grootte en positie.",
   "widgets.tracks.style_styled_note": "Opgemaakte ondertitels houden grootte en positie.",
   "widgets.tracks.timing": "Timing",

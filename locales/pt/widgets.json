@@ -164,6 +164,7 @@
   "widgets.tracks.style": "Estilo",
   "widgets.tracks.style_size": "Tamanho",
   "widgets.tracks.style_position": "Posição",
+  "widgets.tracks.style_font": "Fonte",
   "widgets.tracks.style_image_note": "Legendas em imagem: tamanho e posição próprios.",
   "widgets.tracks.style_styled_note": "Legendas com estilo: tamanho e posição próprios.",
   "widgets.tracks.timing": "Sincronização",

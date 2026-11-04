@@ -173,6 +173,7 @@
   "settings.playback.subtitle_font": "Fuente de subtítulos",
   "settings.playback.subtitle_font.app": "Fuente de la app",
   "settings.playback.subtitle_font.copy": "La fuente de los subtítulos simples. Las demás fuentes son las del televisor. Los subtítulos con estilo conservan las suyas.",
+  "settings.playback.subtitle_font.sample": "¿Dónde estuviste anoche?",
   "settings.playback.hdr_overlay": "Brillo de la interfaz en HDR",
   "settings.playback.hdr_overlay.full": "100 %",
   "settings.playback.hdr_overlay.three_quarters": "75 %",

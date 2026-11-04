@@ -601,7 +601,7 @@ fn field_form(inputs: &FieldListInputs<'_>) -> Form<RowId, Action, SettingsPage>
 fn mode_label(mode: DirectPlayMode) -> &'static str {
     match mode { DirectPlayMode::Auto => plx_platform::i18n::msg::settings_playback_auto(), DirectPlayMode::Forced => plx_platform::i18n::msg::settings_playback_forced(), DirectPlayMode::Disabled => plx_platform::i18n::msg::settings_playback_disabled() }
 }
-use plx_appkit::track_menu::{subtitle_position_label, subtitle_size_label};
+use plx_appkit::track_menu::{subtitle_font_label, subtitle_position_label, subtitle_size_label};
 fn hdr_overlay_label(brightness: HdrOverlayBrightness) -> &'static str {
     match brightness {
         HdrOverlayBrightness::Full => plx_platform::i18n::msg::settings_playback_hdr_overlay_full(),
@@ -626,20 +626,6 @@ fn instant_dpad_seeking_label(mode: InstantDpadSeeking) -> &'static str {
     match mode {
         InstantDpadSeeking::Off => plx_platform::i18n::msg::settings_playback_instant_dpad_seeking_off(),
         InstantDpadSeeking::On => plx_platform::i18n::msg::settings_playback_instant_dpad_seeking_on(),
-    }
-}
-/// A subtitle font as the picker and the row's read-out name it: the app's own is a phrase, every
-/// other choice is a face's own name, the same in every language.
-pub(crate) fn subtitle_font_label(font: SubtitleFont) -> &'static str {
-    match font {
-        SubtitleFont::App => plx_platform::i18n::msg::settings_playback_subtitle_font_app(),
-        SubtitleFont::LgDisplay => "LG Display",
-        SubtitleFont::Arial => "Arial",
-        SubtitleFont::Helvetica => "Helvetica",
-        SubtitleFont::Times => "Times",
-        SubtitleFont::DroidSans => "Droid Sans",
-        SubtitleFont::MuseoSans => "Museo Sans",
-        SubtitleFont::Tinos => "Tinos",
     }
 }
 fn dolby_vision_label(mode: DolbyVisionMode) -> &'static str {

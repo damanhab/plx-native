@@ -168,6 +168,7 @@
   "widgets.tracks.style": "Оформление",
   "widgets.tracks.style_size": "Размер",
   "widgets.tracks.style_position": "Положение",
+  "widgets.tracks.style_font": "Шрифт",
   "widgets.tracks.style_image_note": "Графические субтитры: свой размер и положение.",
   "widgets.tracks.style_styled_note": "Субтитры с оформлением: свой размер и положение.",
   "widgets.tracks.timing": "Синхронизация",

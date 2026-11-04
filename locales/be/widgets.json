@@ -168,6 +168,7 @@
   "widgets.tracks.style": "Стыль",
   "widgets.tracks.style_size": "Памер",
   "widgets.tracks.style_position": "Пазіцыя",
+  "widgets.tracks.style_font": "Шрыфт",
   "widgets.tracks.style_image_note": "Субцітры-відарысы маюць свой памер і пазіцыю.",
   "widgets.tracks.style_styled_note": "Субцітры са стылем маюць свой памер і пазіцыю.",
   "widgets.tracks.timing": "Сінхранізацыя",

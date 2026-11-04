@@ -20,7 +20,8 @@ because the overlay's state shape changed on purpose.
   chevron; it hands off to the timing capsule) and Style. **Other languages:** one row per
   language A-Z; a single-track language is a direct pick row, a multi-track one is a "French, 3
   tracks" drill-in. **Language page:** Full / SDH / Forced / Commentary ranked, identical ones
-  numbered. **Style:** Size, Position and Color drill into picker pages with checkmarks. When
+  numbered. **Style:** Size, Position, Color and Font drill into picker pages with checkmarks (Font,
+  like Size and Position, reaches only plain-text subtitles). When
   the host can run a subtitle search, the root ends with a **Search subtitles** row: its page
   has a Language row (defaulted to the viewer's subtitle preference; a picker of 2-letter
   languages overrides it) and the agent's results; OK on a result downloads it, and once the

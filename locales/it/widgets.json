@@ -164,6 +164,7 @@
   "widgets.tracks.style": "Stile",
   "widgets.tracks.style_size": "Dimensione",
   "widgets.tracks.style_position": "Posizione",
+  "widgets.tracks.style_font": "Carattere",
   "widgets.tracks.style_image_note": "Sottotitoli immagine: misure e posizione fisse.",
   "widgets.tracks.style_styled_note": "Sottotitoli stilizzati: misure e posizione fisse.",
   "widgets.tracks.timing": "Sincronizzazione",

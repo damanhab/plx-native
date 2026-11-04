@@ -164,6 +164,7 @@
   "widgets.tracks.style": "Style",
   "widgets.tracks.style_size": "Taille",
   "widgets.tracks.style_position": "Position",
+  "widgets.tracks.style_font": "Police",
   "widgets.tracks.style_image_note": "Les sous-titres image gardent leur taille et position.",
   "widgets.tracks.style_styled_note": "Les sous-titres stylisés gardent leur taille et position.",
   "widgets.tracks.timing": "Synchronisation",

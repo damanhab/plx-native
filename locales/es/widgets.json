@@ -164,6 +164,7 @@
   "widgets.tracks.style": "Estilo",
   "widgets.tracks.style_size": "Tamaño",
   "widgets.tracks.style_position": "Posición",
+  "widgets.tracks.style_font": "Fuente",
   "widgets.tracks.style_image_note": "Los subtítulos de imagen mantienen su propio tamaño y posición.",
   "widgets.tracks.style_styled_note": "Los subtítulos con estilo mantienen su propio tamaño y posición.",
   "widgets.tracks.timing": "Sincronización",

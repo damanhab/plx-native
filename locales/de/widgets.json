@@ -160,6 +160,7 @@
   "widgets.tracks.style": "Stil",
   "widgets.tracks.style_size": "Größe",
   "widgets.tracks.style_position": "Position",
+  "widgets.tracks.style_font": "Schrift",
   "widgets.tracks.style_image_note": "Bilduntertitel behalten ihre Größe und Position.",
   "widgets.tracks.style_styled_note": "Formatierte Untertitel behalten Größe und Position.",
   "widgets.tracks.timing": "Timing",

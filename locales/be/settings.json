@@ -175,6 +175,7 @@
   "settings.playback.subtitle_font": "Шрыфт субтытраў",
   "settings.playback.subtitle_font.app": "Шрыфт праграмы",
   "settings.playback.subtitle_font.copy": "Шрыфт простых субтытраў. Іншыя шрыфты ўзяты з тэлевізара. Стылізаваныя субтытры захоўваюць свае шрыфты.",
+  "settings.playback.subtitle_font.sample": "Дзе ты быў учора ўвечары?",
   "settings.playback.hdr_overlay": "Яркасць інтэрфейсу ў HDR",
   "settings.playback.hdr_overlay.full": "100%",
   "settings.playback.hdr_overlay.three_quarters": "75%",

@@ -173,6 +173,7 @@
   "settings.playback.subtitle_font": "Carattere sottotitoli",
   "settings.playback.subtitle_font.app": "Carattere dell'app",
   "settings.playback.subtitle_font.copy": "Il carattere dei sottotitoli semplici. Gli altri caratteri sono quelli del TV. I sottotitoli con stile mantengono i propri.",
+  "settings.playback.subtitle_font.sample": "Dov’eri ieri sera?",
   "settings.playback.hdr_overlay": "Luminosità dell’interfaccia in HDR",
   "settings.playback.hdr_overlay.full": "100%",
   "settings.playback.hdr_overlay.three_quarters": "75%",

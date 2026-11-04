@@ -171,6 +171,7 @@
   "settings.playback.subtitle_font": "Ondertitellettertype",
   "settings.playback.subtitle_font.app": "App-lettertype",
   "settings.playback.subtitle_font.copy": "Het lettertype van gewone ondertitels. De andere lettertypen zijn van de tv. Opgemaakte ondertitels houden hun eigen lettertypen.",
+  "settings.playback.subtitle_font.sample": "Waar was je gisteravond?",
   "settings.playback.hdr_overlay": "Helderheid HDR-overlay",
   "settings.playback.hdr_overlay.full": "100%",
   "settings.playback.hdr_overlay.three_quarters": "75%",

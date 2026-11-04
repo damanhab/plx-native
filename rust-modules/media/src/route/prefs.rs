@@ -905,6 +905,10 @@ pub fn restore_dolby_vision_mode(mode: DolbyVisionMode) { restore_live::<DolbyVi
 /// The face plain-text subtitles are drawn in, for the seated profile (`text_style::TextStyle`).
 pub fn subtitle_font() -> SubtitleFont { SubtitleFontPref::live() }
 pub fn restore_subtitle_font(font: SubtitleFont) { restore_live::<SubtitleFontPref>(font) }
+/// [`select_subtitle_size`] for the plain-text subtitle face (the player's Style page).
+pub fn select_subtitle_font(font: SubtitleFont, reply: Option<Sender<bool>>) {
+    choose::<SubtitleFontPref>(font, How::Optimistic(reply));
+}
 
 pub fn skip_interval() -> SkipInterval { SkipIntervalPref::live() }
 pub fn restore_skip_interval(interval: SkipInterval) { restore_live::<SkipIntervalPref>(interval) }

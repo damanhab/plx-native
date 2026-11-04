@@ -564,6 +564,7 @@ pub(crate) fn commit_track(
         TrackCommit::SubtitleTone(tone) => plx_media::player::set_subtitle_tone(tone),
         // live first, persisted after, nothing republished on completion (`route::select_subtitle_size`)
         TrackCommit::SubtitleSize(size) => plx_media::route::select_subtitle_size(size, None),
+        TrackCommit::SubtitleFont(font) => plx_media::route::select_subtitle_font(font, None),
         TrackCommit::SubtitlePosition(position) => plx_media::route::select_subtitle_position(position, None),
         TrackCommit::SubtitleOffset(offset) => {
             plx_media::player::set_subtitle_offset(offset);

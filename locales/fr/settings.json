@@ -173,6 +173,7 @@
   "settings.playback.subtitle_font": "Police des sous-titres",
   "settings.playback.subtitle_font.app": "Police de l'app",
   "settings.playback.subtitle_font.copy": "La police des sous-titres simples. Les autres polices sont celles du téléviseur. Les sous-titres stylisés gardent les leurs.",
+  "settings.playback.subtitle_font.sample": "Où étais-tu hier soir ?",
   "settings.playback.hdr_overlay": "Luminosité de l’interface en HDR",
   "settings.playback.hdr_overlay.full": "100 %",
   "settings.playback.hdr_overlay.three_quarters": "75 %",

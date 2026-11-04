@@ -175,6 +175,7 @@
   "settings.playback.subtitle_font": "Шрифт субтитров",
   "settings.playback.subtitle_font.app": "Шрифт приложения",
   "settings.playback.subtitle_font.copy": "Шрифт обычных субтитров. Остальные шрифты берутся из телевизора. Стилизованные субтитры сохраняют свои шрифты.",
+  "settings.playback.subtitle_font.sample": "Где ты был прошлой ночью?",
   "settings.playback.hdr_overlay": "Яркость интерфейса в HDR",
   "settings.playback.hdr_overlay.full": "100%",
   "settings.playback.hdr_overlay.three_quarters": "75%",

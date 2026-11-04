@@ -3371,6 +3371,52 @@ mod tests {
     }
 }
 
+/// One rendered [`draw_face_sample`] line, kept while the same file, size and text are asked for.
+struct FaceSample {
+    path: std::path::PathBuf,
+    px: i32,
+    text: String,
+    tex: c_uint,
+    w: i32,
+    h: i32,
+    ascent: i32,
+}
+
+thread_local! {
+    /// The one sample on screen: a picker shows one face at a time, so a miss replaces it (the
+    /// texture is re-specified in place, never leaked).
+    static FACE_SAMPLE: RefCell<Option<FaceSample>> = const { RefCell::new(None) };
+}
+
+/// **One line of text in an arbitrary font FILE, as a texture** — the Settings subtitle font
+/// picker's sample, which must show a face the UI's own chain does not carry (the television's
+/// `/usr/share/fonts` faces). The line is shaped and rasterized by the same library the subtitles
+/// use ([`crate::rtl::Face`]), left to right, into a white texture whose alpha is the ink. Returns
+/// `(texture, width, height, ascent)` (the baseline is `ascent` rows below the top), kept while the
+/// same file, size and text are asked for. `None` when the library is missing or the file will not
+/// open: the caller draws its fallback. The miss opens the file (one face, read once per change of
+/// font), so a caller asks only when the face shown changes. Main thread only.
+pub fn face_sample_tex(path: &std::path::Path, px: i32, text: &str) -> Option<(c_uint, i32, i32, i32)> {
+    FACE_SAMPLE.with(|slot| {
+        let mut slot = slot.borrow_mut();
+        let hit = slot.as_ref().is_some_and(|c| c.path == path && c.px == px && c.text == text);
+        if !hit {
+            let face = crate::rtl::Face::open(path, px)?;
+            let run = face.render(text, false)?;
+            if run.w <= 0 || run.h <= 0 || run.alpha.len() != (run.w * run.h) as usize {
+                return None;
+            }
+            let rgba: Vec<u8> = run.alpha.iter().flat_map(|&a| [255, 255, 255, a]).collect();
+            let prev = slot.as_ref().map_or(0, |c| c.tex);
+            let tex = crate::gfx::upload_rgba(prev, run.w, run.h, rgba.as_ptr());
+            *slot = Some(FaceSample { path: path.to_path_buf(), px, text: text.to_string(), tex, w: run.w, h: run.h,
+                ascent: run.ascent });
+        }
+        slot.as_ref().map(|c| (c.tex, c.w, c.h, c.ascent))
+    })
+}
+
+
 #[cfg(test)]
 mod rtl_layout_tests {
     //! The bidirectional half of the run splitter: for a line holding Arabic or Hebrew, which face
