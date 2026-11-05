@@ -68,6 +68,9 @@ pub struct HudModel {
     pub skip_secs: u32,
     /// Stats for nerds is up (`app::diagnostics::enabled()`): the `on` of a `toggle_stats` face.
     pub stats: bool,
+    /// `app::clock::minute_of_day()`: the local time of day in minutes since midnight, where the
+    /// playbar's "Ends" read-out starts counting. `None` when the platform cannot say (no read-out).
+    pub clock_min: Option<u16>,
     /// `plx_media::player::bitmap_by_key`: the lookup `draw_subtitle_bitmap` calls when the key
     /// changes. Injected so this module never names the player.
     pub bitmap_by_key: BitmapLookup,
@@ -100,6 +103,7 @@ impl Default for HudModel {
             detail: false,
             skip_secs: 10,
             stats: false,
+            clock_min: None,
             bitmap_key: None,
             bitmap_by_key: no_bitmap,
         }

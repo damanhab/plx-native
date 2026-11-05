@@ -503,6 +503,29 @@ pub struct Playbar {
     /// ([`crate::scrub_preview::Motion::clock_grow`]). The two sizes are CROSSFADED on it
     /// ([`crate::scrub_preview::clock_faces`]); a size is never tweened.
     pub clock_grow: f32,
+    /// When the item will end, in minutes after today's midnight (may pass 1440): the local time of
+    /// day plus the time left from the DISPLAYED playhead, so a scrub previews its own end time.
+    /// `None` draws the remaining clock alone (no wall clock, no duration, or a surface that does
+    /// not want it, like the trailer transport).
+    pub ends_min: Option<u32>,
+}
+
+/// [`Playbar::ends_min`] from the local time of day and the time left: the time left rounded UP to
+/// the minute, so "Ends 22:41" is never earlier than the end.
+pub(crate) fn ends_min(clock_min: Option<u16>, pos_ns: i64, dur_ns: i64) -> Option<u32> {
+    let clock = clock_min?;
+    if dur_ns <= 0 {
+        return None;
+    }
+    let left_ns = (dur_ns - pos_ns).max(0);
+    let left_min = u32::try_from((left_ns + 59_999_999_999) / 60_000_000_000).ok()?;
+    Some(u32::from(clock) + left_min)
+}
+
+/// The remaining clock's read-out with the end time beside it: `-52:33 · Ends 10:41 PM`.
+pub(crate) fn remaining_with_end(remaining: &str, ends_min: u32) -> String {
+    let time = plx_platform::i18n::current().time_of_day(ends_min);
+    format!("{remaining} · {}", plx_platform::i18n::msg::player_hud_ends_at(&time))
 }
 
 impl Playbar {
@@ -541,6 +564,7 @@ impl Playbar {
             mark: transport_mark(paused, busy, scrub >= 0, dispos, livepos, since_play_ms),
             now,
             clock_grow: 0.0,
+            ends_min: ends_min(model.clock_min, dispos, model.duration_ns),
         }
     }
 }
@@ -668,15 +692,21 @@ pub fn draw_playbar_look(p: Painter, bar: Playbar, look: PlaybarLook, measure: &
     // guard stops guarding and the two clocks can overlap near the end of a long item.
     // Same '0'-template `draw_clock` uses, so the two agree by construction: with tabular figures
     // the template's width IS the real string's width at every tick.
-    let rem_tmpl: String = rem
-        .chars()
-        .map(|c| if c.is_ascii_digit() { '0' } else { c })
-        .collect();
-    let rem_w = measure.width_str(&rem_tmpl, look.clock_size, true);
-    let rem_l = sx + sw - rem_w;
-    let rem_shown = el_r + 20.0 < rem_l;
-    if rem_shown {
-        if let Ok(cs) = CString::new(rem.as_str()) {
+    // The end time rides beside it while there is room; as the elapsed clock closes in near the
+    // end of the item the read-out drops back to the remaining clock alone, and only that hides.
+    let left_of = |label: &str| {
+        let tmpl: String = label.chars().map(|c| if c.is_ascii_digit() { '0' } else { c }).collect();
+        sx + sw - measure.width_str(&tmpl, look.clock_size, true)
+    };
+    let with_end = bar.ends_min.map(|m| remaining_with_end(&rem, m));
+    let label = match with_end {
+        Some(full) if el_r + 20.0 < left_of(&full) => Some(full),
+        _ => (el_r + 20.0 < left_of(&rem)).then_some(rem),
+    };
+    let rem_shown = label.is_some();
+    let rem_l = label.as_deref().map_or(sx + sw, left_of);
+    if let Some(label) = label {
+        if let Ok(cs) = CString::new(label.as_str()) {
             p.text(cs.as_ptr(), sx + sw, ty, look.clock_size, dim, 2, 0);
         }
     }

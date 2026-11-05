@@ -149,6 +149,30 @@ impl LocaleContext {
     pub fn clock(&self) -> Clock {
         self.clock
     }
+    /// Whether a time of day is written on a 12-hour clock: the TV's own Time Format setting when
+    /// it names one, else the formatting region's habit (the English-speaking regions that write
+    /// "10:41 PM"; everywhere else writes "22:41").
+    pub fn twelve_hour(&self) -> bool {
+        match self.clock {
+            Clock::H12 => true,
+            Clock::H24 => false,
+            Clock::Locale => ["en-US", "en-CA", "en-AU", "en-NZ", "en-IN", "en-PH"]
+                .iter()
+                .any(|r| self.format_locale.eq_ignore_ascii_case(r) || self.format_locale.starts_with(&format!("{r}-"))),
+        }
+    }
+    /// A time of day, `minute` minutes after midnight (wrapped into one day), as this context writes
+    /// it: `10:41 PM` on a 12-hour clock (a no-break space before the mark), `22:41` on a 24-hour one.
+    pub fn time_of_day(&self, minute: u32) -> String {
+        let m = minute % (24 * 60);
+        let (h, mm) = (m / 60, m % 60);
+        if self.twelve_hour() {
+            let h12 = if h % 12 == 0 { 12 } else { h % 12 };
+            format!("{h12}:{mm:02}\u{a0}{}", if h < 12 { "AM" } else { "PM" })
+        } else {
+            format!("{h:02}:{mm:02}")
+        }
+    }
     pub fn plural(&self, n: i64) -> PluralCategory {
         self.plural.category_for(n.unsigned_abs())
     }
@@ -711,6 +735,21 @@ mod tests;
 pub fn local_calendar_today() -> Option<[i32; 3]> {
     let seconds = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).ok()?.as_secs();
     local_calendar_date(i64::try_from(seconds).ok()?)
+}
+
+/// **The time of day in the operating system's timezone, as minutes since midnight** (0..1440): the
+/// player HUD's "Ends at" clock. The same kind of read as [`local_calendar_today`] and with the same
+/// one caller, the application's clock door (`app::clock::minute_of_day`), which the loop asks once a
+/// frame and hands to the HUD as an input; never called from a machine. `None` when the platform
+/// cannot say.
+pub fn local_minute_of_day() -> Option<u16> {
+    let seconds = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).ok()?.as_secs();
+    let stamp = libc::time_t::try_from(seconds).ok()?;
+    let mut out = std::mem::MaybeUninit::<libc::tm>::uninit();
+    // SAFETY: both pointers are valid for localtime_r; the result is read only on success.
+    if unsafe { libc::localtime_r(&stamp, out.as_mut_ptr()) }.is_null() { return None; }
+    let tm = unsafe { out.assume_init() };
+    u16::try_from(tm.tm_hour * 60 + tm.tm_min).ok().filter(|m| *m < 24 * 60)
 }
 
 /// A Unix timestamp as a calendar date in the operating system's timezone. Called while building

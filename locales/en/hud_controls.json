@@ -11,6 +11,13 @@
     "value": "Skip forward",
     "description": "Label for a declared player HUD pill or button that seeks forward; the command owns the interval."
   },
+  "player.hud.ends_at": {
+    "value": "Ends {time}",
+    "description": "Player bar, after the time remaining (\"-52:33 · Ends 10:41 PM\"): the clock time the video will finish if it plays on from here. {time} is a time of day already written in the TV's 12- or 24-hour format. Keep it short: it shares one line with the remaining time.",
+    "args": {
+      "time": "str"
+    }
+  },
   "player.up_next.seconds_left": {
     "value": "Next Episode · {seconds} s",
     "description": "The Play Next button label with whole seconds remaining for a declared numeric HUD countdown; all values are measured before layout.",

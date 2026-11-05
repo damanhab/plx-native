@@ -28,7 +28,7 @@ use plx_machine::machine::Measure;
 use plx_ui::Rect;
 
 use super::compile::ClockMode;
-use crate::player_hud::classic::{fmt_time, CLOCK_TOP};
+use crate::player_hud::classic::{fmt_time, remaining_with_end, CLOCK_TOP};
 
 /// Where the playbar's two clocks stand on the clock line (see the module doc).
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -45,7 +45,9 @@ pub(crate) const ELAPSED_BOLD: bool = true;
 pub(crate) const REMAINING_BOLD: bool = false;
 
 /// The widest clock string the app can print at `size` in `bold`, as the playbar prints it: `H:MM:SS` with two
-/// hour digits, each position's widest digit, and `fmt_time`'s minus when `remaining`.
+/// hour digits, each position's widest digit, and `fmt_time`'s minus when `remaining`. The remaining clock also
+/// carries the end time (`-52:33 · Ends 10:41 PM`, [`remaining_with_end`]), so its widest string is the widest
+/// clock with the widest end time of the day beside it.
 pub(crate) fn widest_clock(measure: &dyn Measure, size: i32, bold: bool, remaining: bool) -> String {
     let tens_of_hours = widest_digit(measure, size, bold, 1..=9);
     let tens_of_minutes = widest_digit(measure, size, bold, 0..=5);
@@ -53,7 +55,17 @@ pub(crate) fn widest_clock(measure: &dyn Measure, size: i32, bold: bool, remaini
     let hours = i64::from(tens_of_hours * 10 + ones);
     let minutes = i64::from(tens_of_minutes * 10 + ones);
     let seconds = minutes;
-    fmt_time(((hours * 60 + minutes) * 60 + seconds) * 1_000_000_000, remaining)
+    let clock = fmt_time(((hours * 60 + minutes) * 60 + seconds) * 1_000_000_000, remaining);
+    if !remaining {
+        return clock;
+    }
+    // every hour of the day at the widest minute: the hour digits and the AM/PM mark are what vary
+    let minute = tens_of_minutes * 10 + ones;
+    (0..24u32)
+        .map(|hour| remaining_with_end(&clock, hour * 60 + minute))
+        .map(|s| (measure.width_str(&s, size, bold), s))
+        .fold((f32::NEG_INFINITY, String::new()), |a, b| if b.0 > a.0 { b } else { a })
+        .1
 }
 
 /// The digit of `digits` that is widest at `size` and `bold`; the lowest of equals.

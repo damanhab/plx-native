@@ -479,6 +479,8 @@ impl Transport {
                 mark: self.mark(paused, live_ns),
                 now: self.now_ms,
                 clock_grow: 0.0,
+                // a trailer's end time is not worth a read-out
+                ends_min: None,
             },
             measure,
         );

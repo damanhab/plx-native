@@ -991,3 +991,18 @@ fn local_midnight_follows_the_zone_and_the_clock_change_of_each_date() {
             "local midnight failed (or ran nothing) under {zone}:\n{stdout}\n{}", String::from_utf8_lossy(&out.stderr));
     }
 }
+
+#[test]
+fn a_time_of_day_follows_the_tvs_clock_setting_then_the_region() {
+    let at = |fmt: Option<&str>, clock: Option<&str>| LocaleContext::resolve(Preference::En, None, fmt, clock, None);
+    // the TV's own Time Format wins over the region
+    assert_eq!(at(Some("en-GB"), Some("12")).time_of_day(22 * 60 + 41), "10:41\u{a0}PM");
+    assert_eq!(at(Some("en-US"), Some("24")).time_of_day(22 * 60 + 41), "22:41");
+    // no setting: the region's habit
+    assert_eq!(at(Some("en-US"), None).time_of_day(9 * 60 + 5), "9:05\u{a0}AM");
+    assert_eq!(at(Some("de-DE"), None).time_of_day(9 * 60 + 5), "09:05");
+    // midnight and noon on a 12-hour clock, and an end past midnight wraps into the next day
+    assert_eq!(at(Some("en-US"), Some("12")).time_of_day(0), "12:00\u{a0}AM");
+    assert_eq!(at(Some("en-US"), Some("12")).time_of_day(12 * 60), "12:00\u{a0}PM");
+    assert_eq!(at(Some("en-US"), Some("24")).time_of_day(24 * 60 + 30), "00:30");
+}

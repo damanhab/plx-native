@@ -36,6 +36,28 @@ thread_local! {
     static REPLAY: Cell<Option<u32>> = const { Cell::new(None) };
     /// The last read of the platform's calendar date and the minute (of the frame clock) it was read in.
     static TODAY: Cell<Option<(u32, Option<[i32; 3]>)>> = const { Cell::new(None) };
+    /// The last read of the platform's time of day and the second (of the frame clock) it was read in.
+    static MINUTE: Cell<Option<(u32, Option<u16>)>> = const { Cell::new(None) };
+}
+
+/// The time of day every replay frame answers (20:00), for the same reason as [`REPLAY_DATE`].
+pub(crate) const REPLAY_MINUTE: u16 = 20 * 60;
+
+/// **The time of day** in the OS time zone, as minutes since midnight: the player HUD's "Ends at"
+/// input. Read from the platform at most once a second of the frame clock ([`now`]), so the minute
+/// turns on screen within a second of the wall clock's. Under a replay it is [`REPLAY_MINUTE`].
+/// Main-thread only, like the clock.
+pub(crate) fn minute_of_day() -> Option<u16> {
+    if REPLAY.with(|c| c.get()).is_some() {
+        return Some(REPLAY_MINUTE);
+    }
+    let second = now() / 1000;
+    if let Some((at, minute)) = MINUTE.with(|c| c.get()) {
+        if at == second { return minute; }
+    }
+    let minute = plx_platform::i18n::local_minute_of_day();
+    MINUTE.with(|c| c.set(Some((second, minute))));
+    minute
 }
 
 /// The date every replay frame answers: a recording has no calendar of its own, and a fixed one keeps

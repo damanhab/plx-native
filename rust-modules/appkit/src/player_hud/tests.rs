@@ -1468,6 +1468,24 @@ fn classic_resolved_through_the_compile_is_classics_table() {
     }
 }
 
+/// The end time is the local time plus the time left from the displayed playhead, rounded UP to the minute,
+/// and there is none without a clock or a duration.
+#[test]
+fn the_end_time_is_now_plus_the_time_left_rounded_up() {
+    use crate::player_hud::classic::ends_min;
+    let min = 60_000_000_000i64;
+    // 20:00, ten minutes and one second left: ends 20:11
+    assert_eq!(ends_min(Some(20 * 60), 50 * min - 1_000_000_000, 60 * min), Some(20 * 60 + 11));
+    // exactly ten minutes left: 20:10
+    assert_eq!(ends_min(Some(20 * 60), 50 * min, 60 * min), Some(20 * 60 + 10));
+    // past midnight it keeps counting; the formatter wraps it
+    assert_eq!(ends_min(Some(23 * 60 + 50), 0, 30 * min), Some(24 * 60 + 20));
+    // at or past the end: now
+    assert_eq!(ends_min(Some(20 * 60), 61 * min, 60 * min), Some(20 * 60));
+    assert_eq!(ends_min(None, 0, 60 * min), None);
+    assert_eq!(ends_min(Some(20 * 60), 0, 0), None);
+}
+
 /// The playbar's package options (`knob`, `clocks`, `mark`): extended in place, with classic's values
 /// the default, so the trailer's bar and the classic HUD's bar are the frames they were.
 mod playbar_options {
@@ -1475,7 +1493,7 @@ mod playbar_options {
     use crate::hud_format::compile::{ClockMode, KnobMode, MarkMode};
 
     fn bar(knob: Knob, mark: TransportMark) -> Playbar {
-        Playbar { pos_ns: 600_000_000_000, dur_ns: 1_200_000_000_000, knob, mark, now: 0, clock_grow: 0.0 }
+        Playbar { pos_ns: 600_000_000_000, dur_ns: 1_200_000_000_000, knob, mark, now: 0, clock_grow: 0.0, ends_min: None }
     }
     fn census(b: Playbar, look: PlaybarLook) -> Vec<(u64, Rect)> {
         plx_ui::draw_census::capture(|| draw_playbar_look(Painter::recording(), b, look, &FM))

@@ -1083,16 +1083,26 @@ fn bar_of(state: &CompiledState) -> (Rect, super::clocks::ClockRects, ClockMode,
 /// digits printed through `fmt_time` and measured one by one, so the claim that each position takes its widest
 /// digit is checked against the strings themselves and not assumed.
 fn widest_printed(measure: &dyn Measure, size: i32, bold: bool, remaining: bool) -> f32 {
-    let mut widest = 0.0f32;
+    let mut widest = (0.0f32, String::new());
     for hours in 0..=99i64 {
         for minutes in 0..60i64 {
             for seconds in (0..60i64).step_by(3) {
                 let ns = ((hours * 60 + minutes) * 60 + seconds) * 1_000_000_000;
-                widest = widest.max(measure.width_str(&classic::fmt_time(ns, remaining), size, bold));
+                let s = classic::fmt_time(ns, remaining);
+                let w = measure.width_str(&s, size, bold);
+                if w > widest.0 {
+                    widest = (w, s);
+                }
             }
         }
     }
-    widest
+    if !remaining {
+        return widest.0;
+    }
+    // the remaining clock carries the end time: every minute of the day beside the widest clock
+    (0..24 * 60u32)
+        .map(|m| measure.width_str(&classic::remaining_with_end(&widest.1, m), size, bold))
+        .fold(0.0f32, f32::max)
 }
 
 /// **The clocks have rects, and they are where `draw_playbar_look` puts the clocks**: on the line `CLOCK_TOP`
